@@ -29,19 +29,17 @@ class SettingsController extends Controller {
 		parent::__construct($AppName, $request);
 	}
 
-    #[FrontpageRoute('POST', '/settings/run-job')]
-    #[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
-    #[NoCSRFRequired]
-    public function runJob(): JSONResponse
-    {
-        try {
-            Update::dispatch();
-            return new JSONResponse(['message' => 'Job done.']);
-        }
-        catch(\Exception $e) {
-            return new JSONResponse(['message' => $e->getMessage()]);
-        }
-    }
+	#[FrontpageRoute('POST', '/settings/run-job')]
+	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
+	#[NoCSRFRequired]
+	public function runJob(): JSONResponse {
+		try {
+			Update::dispatch();
+			return new JSONResponse(['message' => 'Job done.']);
+		} catch (\Exception $e) {
+			return new JSONResponse(['message' => $e->getMessage()]);
+		}
+	}
 
 	#[FrontpageRoute('PUT', '/settings/admin')]
 	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]

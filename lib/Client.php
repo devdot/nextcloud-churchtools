@@ -21,7 +21,7 @@ class Client extends GuzzleClient {
 		$this->config = CTConfig::createConfig();
 		$this->client = CTClient::createClient();
 
-        CTLog::enableFileLog(false);
+		CTLog::enableFileLog(false);
 		CTConfig::setConfig($this->config);
 		CTConfig::setApiUrl($ocpConfig->getSystemValueString('url'));
 	}
@@ -49,7 +49,7 @@ class Client extends GuzzleClient {
 		// attempt login with token
 		$token = $this->ocpConfig->getSystemValueString('user_token', '');
 		try {
-            $auth = CTConfig::authWithLoginToken($token);
+			$auth = CTConfig::authWithLoginToken($token);
 			$this->storeSession();
 			return $auth;
 		} catch (CTAuthException $e) {
