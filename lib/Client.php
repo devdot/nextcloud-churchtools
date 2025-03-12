@@ -83,8 +83,7 @@ class Client {
 		$this->ocpConfig->setSystemValue('session', $cookie);
 	}
 
-	public function getGroupRoleTypes(): array
-	{
+	public function getGroupRoleTypes(): array {
 		return $this->groupRoleTypes ??= $this->requestGroupRoleTypes();
 	}
 

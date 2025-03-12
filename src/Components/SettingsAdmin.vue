@@ -7,6 +7,8 @@ import { ref } from 'vue'
 const url = ref(loadState('churchtools_integration', 'url'))
 const userToken = ref()
 const socialLoginName = ref(loadState('churchtools_integration', 'sociallogin_name'))
+const leaderGroupSuffix = ref(loadState('churchtools_integration', 'leader_group_suffix'))
+const groupFolderTag = ref(loadState('churchtools_integration', 'group_folder_tag'))
 
 const saving = ref(false)
 const jobRunning = ref(false)
@@ -18,6 +20,8 @@ function submit() {
 		url: url.value,
 		userToken: userToken.value,
 		socialLoginName: socialLoginName.value,
+		leaderGroupSuffix: leaderGroupSuffix.value,
+		groupFolderTag: groupFolderTag.value,
 	}).then(() => { saving.value = false })
 }
 
@@ -45,6 +49,14 @@ function runJob() {
 		<p>
 			<label for="churchtools_integration_sociallogin_name">{{ t('churchtools_integration', 'SocialLogin Internal Name') }}</label>
 			<input v-model="socialLoginName" type="text" name="churchtools_integration_sociallogin_name">
+		</p>
+		<p>
+			<label for="churchtools_integration_leader_group_suffix">{{ t('churchtools_integration', 'Leader Group Suffix') }}</label>
+			<input v-model="leaderGroupSuffix" type="text" name="churchtools_integration_leader_group_suffix">
+		</p>
+		<p>
+			<label for="churchtools_integration_group_folder_tag">{{ t('churchtools_integration', 'Group Folder Tag') }}</label>
+			<input v-model="groupFolderTag" type="text" name="churchtools_integration_group_folder_tag">
 		</p>
 		<p>
 			<input type="button" value="Save" @click="submit">

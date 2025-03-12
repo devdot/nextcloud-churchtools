@@ -24,6 +24,8 @@ class Admin implements ISettings {
 	public function getForm() {
 		$this->state->provideInitialState('url', $this->config->getSystemValueString('url', 'https://deine-gemeinde.church.tools'));
 		$this->state->provideInitialState('sociallogin_name', $this->config->getSystemValueString('sociallogin_name', 'CT'));
+		$this->state->provideInitialState('leader_group_suffix', $this->config->getSystemValueString('leader_group_suffix', ' (L)'));
+		$this->state->provideInitialState('group_folder_tag', $this->config->getSystemValueString('group_folder_tag', 'Group-Folder'));
 
 		return new TemplateResponse('churchtools_integration', 'settings-admin');
 	}

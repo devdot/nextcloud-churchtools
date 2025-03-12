@@ -13,32 +13,31 @@ use OCP\IUser;
 use OCP\Server;
 use Psr\Log\LoggerInterface;
 
-class UpdatePerson extends QueuedJob
-{
-    private string $socialLoginPrefix;
+class UpdatePerson extends QueuedJob {
+	private string $socialLoginPrefix;
 	private string $leaderGroupSuffix;
 	private string $groupWithFolderTag;
 
-    public function __construct(
+	public function __construct(
 		\OCP\AppFramework\Utility\ITimeFactory $time,
 		private IConfig $config,
 		private IGroupManager $groupManager,
-        private LoggerInterface $logger,
+		private LoggerInterface $logger,
 		private Client $client,
 	) {
 		parent::__construct($time);
 
 		$this->socialLoginPrefix = $this->config->getSystemValueString('sociallogin_name', 'CT') . '-';
-		$this->leaderGroupSuffix = ' (Leiter)'; // TODO: Setting
-		$this->groupWithFolderTag = 'Cloud-Ordner'; // TODO: Setting
+		$this->leaderGroupSuffix = $this->config->getSystemValueString('leader_group_suffix');
+		$this->groupWithFolderTag = $this->config->getSystemValueString('group_folder_tag');
 	}
 
 	public static function dispatch(IUser $user, ?Person $person = null) {
 		$job = Server::get(self::class);
-        $job->setArgument([
-            'user' => $user,
-            'person' => $person,
-        ]);
+		$job->setArgument([
+			'user' => $user,
+			'person' => $person,
+		]);
 		$list = Server::get(IJobList::class);
 		return $job->start($list);
 	}
@@ -50,17 +49,17 @@ class UpdatePerson extends QueuedJob
 			throw new \Exception('CT Auth failed!');
 		}
 
-        $user = $argument['user'] ?? throw new \Exception('Missing user!');
-        $ctUser = $argument['person'] ?? null;
-        if ($ctUser === null) {
-            $id = (int)substr($user->getUID(), strlen($this->socialLoginPrefix));
-            $ctUser = PersonRequest::find($id ?? -1);
-            if ($ctUser === null) {
-                return;
-            }
-        }
+		$user = $argument['user'] ?? throw new \Exception('Missing user!');
+		$ctUser = $argument['person'] ?? null;
+		if ($ctUser === null) {
+			$id = (int)substr($user->getUID(), strlen($this->socialLoginPrefix));
+			$ctUser = PersonRequest::find($id ?? -1);
+			if ($ctUser === null) {
+				return;
+			}
+		}
 
-        // add user to groups
+		// add user to groups
 		$groups = $ctUser->requestGroups()->get();
 		$removeGroups = array_fill_keys($this->groupManager->getUserGroupIds($user), true);
 		foreach ($groups as $personGroup) {
@@ -74,7 +73,7 @@ class UpdatePerson extends QueuedJob
 			}
 
 			// take care of leader groups
-            $leaderName = $name . $this->leaderGroupSuffix;
+			$leaderName = $name . $this->leaderGroupSuffix;
 			if ($this->isGroupLeader($personGroup->getGroupTypeRoleId()) && $leaderGroup = $this->groupManager->get($leaderName)) {
 				$leaderGroup->addUser($user);
 				$removeGroups[$leaderGroup->getGID()] = false;
@@ -92,7 +91,7 @@ class UpdatePerson extends QueuedJob
 		}
 	}
 
-    private function isGroupLeader(int $groupRoleTypeId): bool {
+	private function isGroupLeader(int $groupRoleTypeId): bool {
 		$groupRoleTypes = $this->client->getGroupRoleTypes();
 		$type = $groupRoleTypes[$groupRoleTypeId] ?? null;
 		return $type && ($type->getIsLeader() or $type->getName() === 'Administrator');

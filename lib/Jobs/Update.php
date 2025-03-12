@@ -53,8 +53,8 @@ class Update extends QueuedJob {
 		parent::__construct($time);
 
 		$this->socialLoginPrefix = $this->config->getSystemValueString('sociallogin_name', 'CT') . '-';
-		$this->leaderGroupSuffix = ' (Leiter)'; // TODO: Setting
-		$this->groupWithFolderTag = 'Cloud-Ordner'; // TODO: Setting
+		$this->leaderGroupSuffix = $this->config->getSystemValueString('leader_group_suffix');
+		$this->groupWithFolderTag = $this->config->getSystemValueString('group_folder_tag');
 	}
 
 	public static function dispatch() {

@@ -43,9 +43,11 @@ class SettingsController extends Controller {
 
 	#[FrontpageRoute('PUT', '/settings/admin')]
 	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
-	public function admin(string $url, string $socialLoginName, ?string $userToken): JSONResponse {
+	public function admin(string $url, string $socialLoginName, string $leaderGroupSuffix, string $groupFolderTag, ?string $userToken): JSONResponse {
 		$this->config->setSystemValue('url', $this->sanitizeUrl($url));
 		$this->config->setSystemValue('sociallogin_name', $socialLoginName);
+		$this->config->setSystemValue('leader_group_suffix', $leaderGroupSuffix);
+		$this->config->setSystemValue('group_folder_tag', $groupFolderTag);
 		if (!empty($userToken)) {
 			$this->config->setSystemValue('user_token', $userToken);
 		}
