@@ -4,7 +4,6 @@ namespace OCA\ChurchToolsIntegration\Jobs;
 
 use CTApi\Models\Common\Tag\Tag;
 use CTApi\Models\Groups\Group\Group;
-use CTApi\Models\Groups\GroupTypeRole\GroupTypeRoleRequest;
 use CTApi\Models\Groups\Person\PersonRequest;
 use OCA\ChurchToolsIntegration\Client;
 use OCA\GroupFolders\Folder\FolderManager;
@@ -37,16 +36,6 @@ class Update extends QueuedJob {
 	 * @var Tag[]
 	 */
 	private array $ctGroupTags = [];
-
-	/**
-	 * @var array<int, array<int>>
-	 */
-	private array $ctGroupPersons = [];
-
-	/**
-	 * @var \CTApi\Models\Groups\GroupTypeRole\GroupTypeRole[]
-	 */
-	private array $groupRoleTypes;
 
 	/**
 	 * @var array<string, array<string, mixed>>
@@ -198,56 +187,7 @@ class Update extends QueuedJob {
 			return;
 		}
 
-		// add user to groups
-		$groups = $ctUser->requestGroups()->get();
-		$removeGroups = array_fill_keys($this->groupManager->getUserGroupIds($user), true);
-		foreach ($groups as $personGroup) {
-			// store group for cache
-			$ctGroupId = $personGroup->getGroup()?->getId() ?? 0;
-			$this->ctGroups[$ctGroupId] ??= $personGroup->getGroup();
-			$ctGroup = $this->ctGroups[$ctGroupId];
-
-			// add person to group
-			$this->ctGroupPersons[$ctGroupId] ??= [];
-			$this->ctGroupPersons[$ctGroupId][] = $id;
-
-			$name = $this->socialLoginPrefix . $ctGroup->getName();
-			$group = $this->groupManager->get($name);
-			if ($group) {
-				$group->addUser($user);
-				$removeGroups[$name] = false;
-			}
-
-			// take care of leader groups
-			if ($this->isGroupLeader($personGroup->getGroupTypeRoleId()) && $leaderGroup = $this->getLeaderGroup($ctGroup->getName())) {
-				$leaderGroup->addUser($user);
-				$removeGroups[$leaderGroup->getGID()] = false;
-			}
-		}
-
-		// and remove from groups that are not right
-		$removeGroups = array_filter($removeGroups);
-		foreach ($removeGroups as $groupId => $true) {
-			$group = $this->groupManager->get($groupId);
-			if ($group === null) {
-				continue;
-			}
-			$group->removeUser($user);
-		}
-	}
-
-	private function makeGroupRoleTypes(): array {
-		$return = [];
-		$types = GroupTypeRoleRequest::all();
-		foreach ($types as $type) {
-			$return[(int)$type->getId()] = $type;
-		}
-		return $return;
-	}
-
-	private function isGroupLeader(int $groupRoleTypeId): bool {
-		$this->groupRoleTypes ??= $this->makeGroupRoleTypes();
-		$type = $this->groupRoleTypes[$groupRoleTypeId] ?? null;
-		return $type && ($type->getIsLeader() or $type->getName() === 'Administrator');
+		// run through sub-job
+		UpdatePerson::dispatch($user, $ctUser);
 	}
 }

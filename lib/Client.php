@@ -7,6 +7,7 @@ use CTApi\CTConfig;
 use CTApi\CTLog;
 use CTApi\Exceptions\CTAuthException;
 use CTApi\Models\Common\Auth\Auth;
+use CTApi\Models\Groups\GroupTypeRole\GroupTypeRoleRequest;
 use GuzzleHttp\ClientTrait;
 use OCP\IConfig;
 
@@ -16,6 +17,11 @@ class Client {
 	private CTConfig $config;
 	private CTClient $client;
 	private ?Auth $authData = null;
+
+	/**
+	 * @var \CTApi\Models\Groups\GroupTypeRole\GroupTypeRole[]
+	 */
+	private array $groupRoleTypes;
 
 	public function __construct(
 		private IConfig $ocpConfig,
@@ -75,5 +81,19 @@ class Client {
 
 		$cookie = CTConfig::getSessionCookieString();
 		$this->ocpConfig->setSystemValue('session', $cookie);
+	}
+
+	public function getGroupRoleTypes(): array
+	{
+		return $this->groupRoleTypes ??= $this->requestGroupRoleTypes();
+	}
+
+	private function requestGroupRoleTypes(): array {
+		$return = [];
+		$types = GroupTypeRoleRequest::all();
+		foreach ($types as $type) {
+			$return[(int)$type->getId()] = $type;
+		}
+		return $return;
 	}
 }
