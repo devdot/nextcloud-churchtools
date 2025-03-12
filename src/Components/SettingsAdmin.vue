@@ -23,6 +23,7 @@ function submit() {
 
 function runJob() {
 	jobRunning.value = true
+	jobReturn.value = null
 	axios.post(generateUrl('/apps/churchtools_integration/settings/run-job')).then((response) => {
 		jobReturn.value = response.data.message
 		jobRunning.value = false

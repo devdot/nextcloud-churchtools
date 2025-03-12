@@ -35,7 +35,7 @@ class SettingsController extends Controller {
 	public function runJob(): JSONResponse {
 		try {
 			Update::dispatch();
-			return new JSONResponse(['message' => 'Job done.']);
+			return new JSONResponse(['message' => 'Job done ' . date('H:i:s') . '.']);
 		} catch (\Exception $e) {
 			return new JSONResponse(['message' => $e->getMessage()]);
 		}

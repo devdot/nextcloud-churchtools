@@ -7,10 +7,12 @@ use CTApi\CTConfig;
 use CTApi\CTLog;
 use CTApi\Exceptions\CTAuthException;
 use CTApi\Models\Common\Auth\Auth;
-use GuzzleHttp\Client as GuzzleClient;
+use GuzzleHttp\ClientTrait;
 use OCP\IConfig;
 
-class Client extends GuzzleClient {
+class Client {
+	use ClientTrait;
+
 	private CTConfig $config;
 	private CTClient $client;
 	private ?Auth $authData = null;
@@ -24,6 +26,15 @@ class Client extends GuzzleClient {
 		CTLog::enableFileLog(false);
 		CTConfig::setConfig($this->config);
 		CTConfig::setApiUrl($ocpConfig->getSystemValueString('url'));
+	}
+
+
+	public function request(string $method, $uri, array $options = []): \Psr\Http\Message\ResponseInterface {
+		return $this->client->{$method}($uri, $options);
+	}
+
+	public function requestAsync(string $method, $uri, array $options = []): \GuzzleHttp\Promise\PromiseInterface {
+		throw new \Exception('NOT IMPLEMENTED');
 	}
 
 	public function auth(): ?Auth {
