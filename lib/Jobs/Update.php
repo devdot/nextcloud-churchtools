@@ -6,11 +6,14 @@ use CTApi\Models\Common\Tag\Tag;
 use CTApi\Models\Groups\Group\Group;
 use CTApi\Models\Groups\Person\PersonRequest;
 use OCA\ChurchToolsIntegration\Client;
+use OCA\GroupFolders\ACL\RuleManager;
 use OCA\GroupFolders\Folder\FolderManager;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\Constants;
+use OCP\Files\IRootFolder;
 use OCP\IConfig;
+use OCP\IDBConnection;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IUser;
@@ -22,6 +25,7 @@ class Update extends QueuedJob {
 	private string $socialLoginPrefix;
 	private string $leaderGroupSuffix;
 	private string $groupWithFolderTag;
+	private int $rootStorageId;
 	/**
 	 * @var \CTApi\Models\Groups\Person\Person[]
 	 */
@@ -48,6 +52,9 @@ class Update extends QueuedJob {
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
 		private FolderManager $folderManager,
+		private RuleManager $ruleManager,
+		private IRootFolder $rootFolder,
+		private readonly IDBConnection $connection,
 		private Client $client,
 	) {
 		parent::__construct($time);
@@ -55,6 +62,8 @@ class Update extends QueuedJob {
 		$this->socialLoginPrefix = $this->config->getSystemValueString('sociallogin_name', 'CT') . '-';
 		$this->leaderGroupSuffix = $this->config->getSystemValueString('leader_group_suffix');
 		$this->groupWithFolderTag = $this->config->getSystemValueString('group_folder_tag');
+
+		$this->rootStorageId = $rootFolder->getMountPoint()->getNumericStorageId() ?? -1;
 	}
 
 	public static function dispatch() {
@@ -144,13 +153,40 @@ class Update extends QueuedJob {
 		if (count($folder['groups']) === 0) {
 			// add our group as default group
 			$this->folderManager->addApplicableGroup($folder['id'], $ncGroup->getGID());
-			$this->folderManager->setGroupPermissions($folder['id'], $ncGroup->getGID(), Constants::PERMISSION_READ);
+			$this->folderManager->setGroupPermissions($folder['id'], $ncGroup->getGID(), Constants::PERMISSION_ALL);
 			$this->folderManager->addApplicableGroup($folder['id'], $ncLeaderGroup->getGID());
 			$this->folderManager->setGroupPermissions($folder['id'], $ncLeaderGroup->getGID(), Constants::PERMISSION_ALL);
 			$this->folderManager->setManageAcl($folder['id'], 'group', $ncLeaderGroup->getGID(), true);
 			$this->folderManager->setFolderAcl($folder['id'], true);
 			$this->folderManager->setManageAcl($folder['id'], 'group', $ncLeaderGroup->getGID(), true);
 		}
+
+		// set ACL for those folders
+		$path = '__groupfolders/' . $folder['id'];
+		$rules = $this->ruleManager->getAllRulesForPaths($this->rootStorageId, [$path]);
+		if (count($rules) === 0) {
+			// find the file id
+			$query = $this->connection->getQueryBuilder();
+			$query->select(['fileid'])
+				->from('filecache')
+				->where($query->expr()->eq('path_hash', $query->createNamedParameter(md5($path))))
+				->andWhere($query->expr()->eq('storage', $query->createNamedParameter($this->rootStorageId)));
+			$fileId = (int)$query->executeQuery()->fetch(\PDO::FETCH_COLUMN);
+			$this->setAclForGroupFolder($ncGroup, $fileId, 1);
+			$this->setAclForGroupFolder($ncLeaderGroup, $fileId, 31);
+		}
+	}
+
+	private function setAclForGroupFolder(IGroup $group, int $fileId, int $permissions, int $mask = 31): void {
+		$query = $this->connection->getQueryBuilder();
+		$query->insert('group_folders_acl')->values([
+			'fileid' => $fileId,
+			'mapping_type' => '\'group\'',
+			'mapping_id' => $query->createNamedParameter($group->getGID()),
+			'mask' => $mask,
+			'permissions' => $permissions,
+		]);
+		$query->executeStatement();
 	}
 
 	private function addLeaderGroup(string $name): IGroup {

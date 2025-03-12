@@ -11,7 +11,6 @@ use OCP\IConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\Server;
-use Psr\Log\LoggerInterface;
 
 class UpdatePerson extends QueuedJob {
 	private string $socialLoginPrefix;
@@ -22,7 +21,6 @@ class UpdatePerson extends QueuedJob {
 		\OCP\AppFramework\Utility\ITimeFactory $time,
 		private IConfig $config,
 		private IGroupManager $groupManager,
-		private LoggerInterface $logger,
 		private Client $client,
 	) {
 		parent::__construct($time);
