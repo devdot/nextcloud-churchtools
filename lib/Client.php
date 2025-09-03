@@ -62,7 +62,7 @@ class Client {
 				// continue
 			}
 		}
-  
+
 		// attempt login with token
 		$token = $this->ocpConfig->getSystemValueString('user_token', '');
 		try {

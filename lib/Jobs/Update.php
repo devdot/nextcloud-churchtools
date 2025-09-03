@@ -95,7 +95,7 @@ class Update extends QueuedJob {
 				$groups[] = $return['data'];
 			} while ($return && $return['meta']['pagination']['lastPage'] > $page);
 			$groups = array_merge(...$groups);
-			
+
 			// now loop through the groups and create objects
 			foreach ($groups as $group) {
 				$this->ctGroups[$group['id']] = Group::createModelsFromArray($group)[0];
@@ -139,7 +139,7 @@ class Update extends QueuedJob {
 
 		// always add a leader group here
 		$ncLeaderGroup = $this->addLeaderGroup($groupName);
-		
+
 		// make sure there is a group folder for this
 		$folder = $this->groupFolders[$groupName] ?? null;
 		if ($folder === null) {
@@ -193,7 +193,7 @@ class Update extends QueuedJob {
 		// TODO: maybe keep a record of these groups in a DB?
 		$leaderName = $this->socialLoginPrefix . $name . $this->leaderGroupSuffix;
 		return $this->groupManager->get($leaderName) ?? $this->groupManager->createGroup($leaderName);
-			
+
 	}
 
 	private function getLeaderGroup(string $name): ?IGroup {

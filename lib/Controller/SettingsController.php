@@ -4,27 +4,25 @@ declare(strict_types=1);
 
 namespace OCA\ChurchToolsIntegration\Controller;
 
+use Exception;
+use GuzzleHttp\Client;
+use JsonException;
 use OCA\ChurchToolsIntegration\Jobs\Update;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AuthorizedAdminSetting;
 use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\IRequest;
 
 class SettingsController extends Controller {
-	/**
-	 * @param string $AppName
-	 * @param IRequest $request
-	 * @param IL10N $l
-	 */
 	public function __construct(
-		$AppName,
+		string $AppName,
 		IRequest $request,
 		private IL10N $l,
-		private IConfig $config,
+		private IAppConfig $config,
 	) {
 		parent::__construct($AppName, $request);
 	}
@@ -41,18 +39,65 @@ class SettingsController extends Controller {
 		}
 	}
 
-	#[FrontpageRoute('PUT', '/settings/admin')]
+	#[FrontpageRoute('PUT', '/settings/set')]
 	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
-	public function admin(string $url, string $socialLoginName, string $leaderGroupSuffix, string $groupFolderTag, ?string $userToken): JSONResponse {
-		$this->config->setSystemValue('url', $this->sanitizeUrl($url));
-		$this->config->setSystemValue('sociallogin_name', $socialLoginName);
-		$this->config->setSystemValue('leader_group_suffix', $leaderGroupSuffix);
-		$this->config->setSystemValue('group_folder_tag', $groupFolderTag);
-		if (!empty($userToken)) {
-			$this->config->setSystemValue('user_token', $userToken);
-		}
+	public function set(string $setting, mixed $value): JSONResponse {
+		switch ($setting) {
+			case 'url':
+				assert(is_string($value));
+				$value = $this->sanitizeUrl($value);
+				return $this->setString($setting, $value);
 
-		return new JSONResponse();
+			case 'user_prefix':
+			case 'group_prefix':
+			case 'oauth2_client_id':
+			case 'oauth2_login_label':
+				assert(is_string($value));
+				return $this->setString($setting, $value);
+
+			case 'oauth2_enabled':
+			case 'oauth2_use_username':
+				assert(is_bool($value));
+				return $this->setBool($setting, $value);
+
+			default:
+				return new JSONResponse([], 400);
+		}
+	}
+
+	#[FrontpageRoute('POST', '/settings/check_api')]
+	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
+	public function checkApi(): JSONResponse {
+		$url = $this->config->getValueString($this->appName, 'url');
+		try {
+			$client = new Client();
+			$request = $client->get($url . '/api/info');
+			$response = $request->getBody()->getContents();
+			return new JSONResponse([
+				'url' => $url,
+				'info' => json_decode($response, null, 512, JSON_THROW_ON_ERROR),
+			]);
+		} catch (JsonException $e) {
+			return new JSONResponse([
+				'url' => $url,
+				'error' => 'Invalid JSON returned from /api/info',
+			]);
+		} catch (Exception $e) {
+			return new JSONResponse([
+				'url' => $url,
+				'error' => $e->getMessage(),
+			]);
+		}
+	}
+
+	private function setString(string $setting, string $value): JSONResponse {
+		$this->config->setValueString($this->appName, $setting, $value);
+		return new JSONResponse(['value' => $value]);
+	}
+
+	private function setBool(string $setting, bool $value): JSONResponse {
+		$this->config->setValueBool($this->appName, $setting, $value);
+		return new JSONResponse(['value' => $value]);
 	}
 
 	private function sanitizeUrl(string $url): string {

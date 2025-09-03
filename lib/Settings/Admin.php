@@ -4,30 +4,43 @@ namespace OCA\ChurchToolsIntegration\Settings;
 
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\IL10N;
+use OCP\IURLGenerator;
 use OCP\Settings\ISettings;
 
 class Admin implements ISettings {
 
 
 	public function __construct(
+		private string $appName,
 		private IL10N $l,
-		private IConfig $config,
+		private IAppConfig $config,
 		private IInitialState $state,
+		private IURLGenerator $urlGenerator,
 	) {
 	}
 
-	/**
-	 * @return TemplateResponse
-	 */
-	public function getForm() {
-		$this->state->provideInitialState('url', $this->config->getSystemValueString('url', 'https://deine-gemeinde.church.tools'));
-		$this->state->provideInitialState('sociallogin_name', $this->config->getSystemValueString('sociallogin_name', 'CT'));
-		$this->state->provideInitialState('leader_group_suffix', $this->config->getSystemValueString('leader_group_suffix', ' (L)'));
-		$this->state->provideInitialState('group_folder_tag', $this->config->getSystemValueString('group_folder_tag', 'Group-Folder'));
+	public function getForm(): TemplateResponse {
+		$this->provideInitialStateFromConfigString('url', 'https://deine-gemeinde.church.tools');
+		$this->provideInitialStateFromConfigString('user_prefix');
+		$this->provideInitialStateFromConfigString('group_prefix');
+
+		$this->provideInitialStateFromConfigBool('oauth2_enabled');
+		$this->provideInitialStateFromConfigBool('oauth2_use_username');
+		// $this->provideInitialStateFromConfigString('oauth2_client_id'); // dont send the secret
+		$this->provideInitialStateFromConfigString('oauth2_login_label', 'Login with ChurchTools');
+		$this->state->provideInitialState('oauth2_redirect_uri', $this->urlGenerator->linkToRouteAbsolute($this->appName . '.oauth2.login'));
 
 		return new TemplateResponse('churchtools_integration', 'settings-admin');
+	}
+
+	private function provideInitialStateFromConfigString(string $state, string $default = '', bool $lazy = false): void {
+		$this->state->provideInitialState($state, $this->config->getValueString($this->appName, $state, $default, $lazy));
+	}
+
+	private function provideInitialStateFromConfigBool(string $state, bool $default = false, bool $lazy = false): void {
+		$this->state->provideInitialState($state, $this->config->getValueBool($this->appName, $state, $default, $lazy));
 	}
 
 	public function getSection() {
