@@ -65,6 +65,8 @@ const settings = {
 	oauth2_redirect_uri: createRef('oauth2_redirect_uri'),
 	oauth2_client_id: ref(''),
 	oauth2_login_label: createRef('oauth2_login_label'),
+	api_enabled: createWatchedRef('api_enabled', false),
+	api_token: ref(''),
 }
 
 const jobRunning = ref(false)
@@ -135,6 +137,33 @@ function runJob() {
 			<NcInputField v-model="settings.oauth2_redirect_uri.value"
 				:label="t('churchtools_integration', 'Redirect URI')"
 				:disabled="true" />
+		</fieldset>
+		<fieldset class="section">
+			<h2>{{ t('churchtools_integration', 'API User') }}</h2>
+
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.api_enabled.value">
+				{{ t('settings', 'Enable') }}
+			</NcCheckboxRadioSwitch>
+			<NcInputField v-model="settings.api_token.value"
+				:label="t('churchtools_integration', 'API Token')"
+				@change="save('api_token')" />
+
+			<div v-if="settings.api_enabled.value">
+				<NcNoteCard v-if="apiState === false" type="warning" text="API Status unknown!" />
+				<NcNoteCard v-if="apiState === 'fetching'" type="info" text="API Status is being fetched ..." />
+				<div v-else>
+					<NcNoteCard v-if="apiState.user_id ?? null" type="success">
+						API connected to user #{{ apiState.user_id }}
+					</NcNoteCard>
+					<NcNoteCard v-else type="error">
+						API not connected to any user!
+					</NcNoteCard>
+				</div>
+				<NcButton :disabled="apiState === 'fetching'" @click="checkApi()">
+					Check API Connection
+				</NcButton>
+			</div>
 		</fieldset>
 		<fieldset class="section">
 			<p>

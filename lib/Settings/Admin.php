@@ -33,6 +33,9 @@ class Admin implements ISettings {
 		$this->provideInitialStateFromConfigString('oauth2_login_label', 'Login with ChurchTools');
 		$this->state->provideInitialState('oauth2_redirect_uri', $this->urlGenerator->linkToRouteAbsolute($this->appName . '.oauth2.login'));
 
+		$this->provideInitialStateFromConfigBool('api_enabled');
+		// $this->provideInitialStateFromConfigString('api_token');
+
 		return new TemplateResponse('churchtools_integration', 'settings-admin');
 	}
 

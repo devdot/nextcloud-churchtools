@@ -9,7 +9,7 @@ use CTApi\Exceptions\CTAuthException;
 use CTApi\Models\Common\Auth\Auth;
 use CTApi\Models\Groups\GroupTypeRole\GroupTypeRoleRequest;
 use GuzzleHttp\ClientTrait;
-use OCP\IConfig;
+use OCP\IAppConfig;
 
 class Client {
 	use ClientTrait;
@@ -24,14 +24,15 @@ class Client {
 	private array $groupRoleTypes;
 
 	public function __construct(
-		private IConfig $ocpConfig,
+		private string $appName,
+		private IAppConfig $ocpConfig,
 	) {
 		$this->config = CTConfig::createConfig();
 		$this->client = CTClient::createClient();
 
 		CTLog::enableFileLog(false);
 		CTConfig::setConfig($this->config);
-		CTConfig::setApiUrl($ocpConfig->getSystemValueString('url'));
+		CTConfig::setApiUrl($ocpConfig->getValueString($this->appName, 'url'));
 	}
 
 
@@ -52,7 +53,7 @@ class Client {
 		CTClient::setClient($this->client);
 
 		// attempt login with session
-		$session = $this->ocpConfig->getSystemValueString('session', '');
+		$session = $this->ocpConfig->getValueString($this->appName, 'session', '');
 		if (!empty($session)) {
 			try {
 				$auth = CTConfig::authWithSessionCookie($session);
@@ -64,7 +65,7 @@ class Client {
 		}
 
 		// attempt login with token
-		$token = $this->ocpConfig->getSystemValueString('user_token', '');
+		$token = $this->ocpConfig->getValueString($this->appName, 'api_token', '');
 		try {
 			$auth = CTConfig::authWithLoginToken($token);
 			$this->storeSession();
@@ -80,7 +81,7 @@ class Client {
 		CTConfig::setConfig($this->config);
 
 		$cookie = CTConfig::getSessionCookieString();
-		$this->ocpConfig->setSystemValue('session', $cookie);
+		$this->ocpConfig->setValueString($this->appName, 'api_session', $cookie);
 	}
 
 	public function getGroupRoleTypes(): array {

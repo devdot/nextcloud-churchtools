@@ -52,12 +52,14 @@ class SettingsController extends Controller {
 			case 'group_prefix':
 			case 'oauth2_client_id':
 			case 'oauth2_login_label':
+			case 'api_token':
 				assert(is_string($value));
 				return $this->setString($setting, $value);
 
 			case 'oauth2_enabled':
 			case 'oauth2_hide_default':
 			case 'oauth2_use_username':
+			case 'api_enabled':
 				assert(is_bool($value));
 				return $this->setBool($setting, $value);
 
@@ -74,9 +76,19 @@ class SettingsController extends Controller {
 			$client = new Client();
 			$request = $client->get($url . '/api/info');
 			$response = $request->getBody()->getContents();
+			$info = json_decode($response, null, 512, JSON_THROW_ON_ERROR);
+
+			$userId = null;
+			if ($this->config->getValueBool($this->appName, 'api_enabled')) {
+				$api = new \OCA\ChurchToolsIntegration\Client($this->appName, $this->config);
+				$auth = $api->auth();
+				$userId = $auth?->userId ?? null;
+			}
+
 			return new JSONResponse([
 				'url' => $url,
-				'info' => json_decode($response, null, 512, JSON_THROW_ON_ERROR),
+				'info' => $info,
+				'user_id' => $userId,
 			]);
 		} catch (JsonException $e) {
 			return new JSONResponse([
