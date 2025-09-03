@@ -31,6 +31,7 @@ class Application extends App implements IBootstrap {
 
 		// register our churchtools login
 		$context->registerAlternativeLogin(ChurchToolsLogin::class);
+		$context->registerAlternativeLogin(DefaultLogin::class);
 	}
 
 	public function boot(IBootContext $context): void {

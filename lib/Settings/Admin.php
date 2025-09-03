@@ -27,6 +27,7 @@ class Admin implements ISettings {
 		$this->provideInitialStateFromConfigString('group_prefix');
 
 		$this->provideInitialStateFromConfigBool('oauth2_enabled');
+		$this->provideInitialStateFromConfigBool('oauth2_hide_default');
 		$this->provideInitialStateFromConfigBool('oauth2_use_username');
 		// $this->provideInitialStateFromConfigString('oauth2_client_id'); // dont send the secret
 		$this->provideInitialStateFromConfigString('oauth2_login_label', 'Login with ChurchTools');

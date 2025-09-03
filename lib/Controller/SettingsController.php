@@ -56,6 +56,7 @@ class SettingsController extends Controller {
 				return $this->setString($setting, $value);
 
 			case 'oauth2_enabled':
+			case 'oauth2_hide_default':
 			case 'oauth2_use_username':
 				assert(is_bool($value));
 				return $this->setBool($setting, $value);

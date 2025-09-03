@@ -60,6 +60,7 @@ const settings = {
 	user_prefix: createRef('user_prefix'),
 	group_prefix: createRef('group_prefix'),
 	oauth2_enabled: createWatchedRef('oauth2_enabled', false),
+	oauth2_hide_default: createWatchedRef('oauth2_hide_default', false),
 	oauth2_use_username: createWatchedRef('oauth2_use_username', false),
 	oauth2_redirect_uri: createRef('oauth2_redirect_uri'),
 	oauth2_client_id: ref(''),
@@ -116,6 +117,10 @@ function runJob() {
 			<NcCheckboxRadioSwitch type="switch"
 				:checked.sync="settings.oauth2_enabled.value">
 				{{ t('settings', 'Enable') }}
+			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.oauth2_hide_default.value">
+				{{ t('settings', 'Hide Default Login') }}
 			</NcCheckboxRadioSwitch>
 			<NcCheckboxRadioSwitch type="switch"
 				:checked.sync="settings.oauth2_use_username.value">
