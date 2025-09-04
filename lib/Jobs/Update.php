@@ -12,7 +12,7 @@ use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\Constants;
 use OCP\Files\IRootFolder;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\IDBConnection;
 use OCP\IGroup;
 use OCP\IGroupManager;
@@ -22,7 +22,8 @@ use OCP\Server;
 
 class Update extends QueuedJob {
 
-	private string $socialLoginPrefix;
+	private string $userPrefix;
+	private string $groupPrefix;
 	private string $leaderGroupSuffix;
 	private string $groupWithFolderTag;
 	private int $rootStorageId;
@@ -47,8 +48,9 @@ class Update extends QueuedJob {
 	private array $groupFolders = [];
 
 	public function __construct(
+		private string $appName,
 		\OCP\AppFramework\Utility\ITimeFactory $time,
-		private IConfig $config,
+		private IAppConfig $config,
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
 		private FolderManager $folderManager,
@@ -59,9 +61,10 @@ class Update extends QueuedJob {
 	) {
 		parent::__construct($time);
 
-		$this->socialLoginPrefix = $this->config->getSystemValueString('sociallogin_name', 'CT') . '-';
-		$this->leaderGroupSuffix = $this->config->getSystemValueString('leader_group_suffix');
-		$this->groupWithFolderTag = $this->config->getSystemValueString('group_folder_tag');
+		$this->userPrefix = $this->config->getValueString($this->appName, 'user_prefix');
+		$this->groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
+		$this->leaderGroupSuffix = $this->config->getValueString($this->appName, 'groupfolders_leader_group_suffix');
+		$this->groupWithFolderTag = $this->config->getValueString($this->appName, 'groupfolders_tag');
 
 		$this->rootStorageId = $rootFolder->getMountPoint()->getNumericStorageId() ?? -1;
 	}
@@ -132,7 +135,7 @@ class Update extends QueuedJob {
 	private function updateGroupWithFolder(Group $group): void {
 		// make sure the group is created
 		$groupName = $group->getName();
-		$ncGroupName = $this->socialLoginPrefix . $groupName;
+		$ncGroupName = $this->groupPrefix . $groupName;
 		if (($ncGroup = $this->groupManager->get($ncGroupName)) === null) {
 			$ncGroup = $this->groupManager->createGroup($ncGroupName);
 		}
@@ -191,13 +194,13 @@ class Update extends QueuedJob {
 
 	private function addLeaderGroup(string $name): IGroup {
 		// TODO: maybe keep a record of these groups in a DB?
-		$leaderName = $this->socialLoginPrefix . $name . $this->leaderGroupSuffix;
+		$leaderName = $this->groupPrefix . $name . $this->leaderGroupSuffix;
 		return $this->groupManager->get($leaderName) ?? $this->groupManager->createGroup($leaderName);
 
 	}
 
 	private function getLeaderGroup(string $name): ?IGroup {
-		$leaderName = $this->socialLoginPrefix . $name . $this->leaderGroupSuffix;
+		$leaderName = $this->groupPrefix . $name . $this->leaderGroupSuffix;
 		return $this->groupManager->get($leaderName);
 	}
 
@@ -205,17 +208,17 @@ class Update extends QueuedJob {
 		foreach (PersonRequest::all() as $person) {
 			$this->ctUsers[$person->getId()] = $person;
 		}
-		$this->userManager->callForAllUsers(\Closure::fromCallable([$this, 'callbackUpdatePerson']), $this->socialLoginPrefix);
+		$this->userManager->callForAllUsers(\Closure::fromCallable([$this, 'callbackUpdatePerson']), $this->userPrefix);
 	}
 
 	public function callbackUpdatePerson(IUser $user): void {
 		$id = $user->getUID();
 
-		if (!str_starts_with($id, $this->socialLoginPrefix)) {
+		if (!str_starts_with($id, $this->userPrefix)) {
 			return;
 		}
 
-		$id = (int)substr($id, strlen($this->socialLoginPrefix));
+		$id = (int)substr($id, strlen($this->userPrefix));
 
 		// now load the CT User
 		$ctUser = $this->ctUsers[$id] ?? null;

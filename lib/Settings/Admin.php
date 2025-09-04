@@ -36,6 +36,10 @@ class Admin implements ISettings {
 		$this->provideInitialStateFromConfigBool('api_enabled');
 		// $this->provideInitialStateFromConfigString('api_token');
 
+		$this->provideInitialStateFromConfigBool('groupfolders_enabled');
+		$this->provideInitialStateFromConfigString('groupfolders_tag', 'Nextcloud');
+		$this->provideInitialStateFromConfigString('groupfolders_leader_group_suffix', ' (L)');
+
 		return new TemplateResponse('churchtools_integration', 'settings-admin');
 	}
 

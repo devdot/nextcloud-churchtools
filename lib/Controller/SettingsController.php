@@ -53,6 +53,8 @@ class SettingsController extends Controller {
 			case 'oauth2_client_id':
 			case 'oauth2_login_label':
 			case 'api_token':
+			case 'groupfolders_tag':
+			case 'groupfolders_leader_group_suffix':
 				assert(is_string($value));
 				return $this->setString($setting, $value);
 
@@ -60,6 +62,7 @@ class SettingsController extends Controller {
 			case 'oauth2_hide_default':
 			case 'oauth2_use_username':
 			case 'api_enabled':
+			case 'groupfolders_enabled':
 				assert(is_bool($value));
 				return $this->setBool($setting, $value);
 

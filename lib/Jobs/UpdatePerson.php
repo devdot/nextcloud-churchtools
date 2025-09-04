@@ -7,27 +7,30 @@ use CTApi\Models\Groups\Person\PersonRequest;
 use OCA\ChurchToolsIntegration\Client;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
-use OCP\IConfig;
+use OCP\IAppConfig;
 use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\Server;
 
 class UpdatePerson extends QueuedJob {
-	private string $socialLoginPrefix;
+	private string $userPrefix;
+	private string $groupPrefix;
 	private string $leaderGroupSuffix;
 	private string $groupWithFolderTag;
 
 	public function __construct(
+		private string $appName,
 		\OCP\AppFramework\Utility\ITimeFactory $time,
-		private IConfig $config,
+		private IAppConfig $config,
 		private IGroupManager $groupManager,
 		private Client $client,
 	) {
 		parent::__construct($time);
 
-		$this->socialLoginPrefix = $this->config->getSystemValueString('sociallogin_name', 'CT') . '-';
-		$this->leaderGroupSuffix = $this->config->getSystemValueString('leader_group_suffix');
-		$this->groupWithFolderTag = $this->config->getSystemValueString('group_folder_tag');
+		$this->userPrefix = $this->config->getValueString($this->appName, 'user_prefix');
+		$this->groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
+		$this->leaderGroupSuffix = $this->config->getValueString($this->appName, 'groupfolders_leader_group_suffix');
+		$this->groupWithFolderTag = $this->config->getValueString($this->appName, 'groupfolders_tag');
 	}
 
 	public static function dispatch(IUser $user, ?Person $person = null) {
@@ -50,7 +53,7 @@ class UpdatePerson extends QueuedJob {
 		$user = $argument['user'] ?? throw new \Exception('Missing user!');
 		$ctUser = $argument['person'] ?? null;
 		if ($ctUser === null) {
-			$id = (int)substr($user->getUID(), strlen($this->socialLoginPrefix));
+			$id = (int)substr($user->getUID(), strlen($this->userPrefix));
 			$ctUser = PersonRequest::find($id ?? -1);
 			if ($ctUser === null) {
 				return;
@@ -63,7 +66,7 @@ class UpdatePerson extends QueuedJob {
 		foreach ($groups as $personGroup) {
 			$ctGroup = $personGroup->getGroup();
 
-			$name = $this->socialLoginPrefix . $ctGroup->getName();
+			$name = $this->groupPrefix . $ctGroup->getName();
 			$group = $this->groupManager->get($name);
 			if ($group) {
 				$group->addUser($user);

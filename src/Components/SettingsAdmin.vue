@@ -67,6 +67,9 @@ const settings = {
 	oauth2_login_label: createRef('oauth2_login_label'),
 	api_enabled: createWatchedRef('api_enabled', false),
 	api_token: ref(''),
+	groupfolders_enabled: createWatchedRef('groupfolders_enabled', false),
+	groupfolders_tag: createRef('groupfolders_tag'),
+	groupfolders_leader_group_suffix: createRef('groupfolders_leader_group_suffix'),
 }
 
 const jobRunning = ref(false)
@@ -164,6 +167,23 @@ function runJob() {
 					Check API Connection
 				</NcButton>
 			</div>
+		</fieldset>
+		<fieldset class="section">
+			<h2>{{ t('churchtools_integration', 'Groupfolders') }}</h2>
+			<NcNoteCard type="info">
+				Make sure the <a href="https://github.com/nextcloud/groupfolders/">Groupfolders app</a> is active if you're using this option.
+			</NcNoteCard>
+
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.groupfolders_enabled.value">
+				{{ t('settings', 'Enable') }}
+			</NcCheckboxRadioSwitch>
+			<NcInputField v-model="settings.groupfolders_tag.value"
+				:label="t('churchtools_integration', 'Groupfolder Tag')"
+				@change="save('groupfolders_tag')" />
+			<NcInputField v-model="settings.groupfolders_leader_group_suffix.value"
+				:label="t('churchtools_integration', 'Leaders Group Suffix')"
+				@change="save('groupfolders_leader_group_suffix')" />
 		</fieldset>
 		<fieldset class="section">
 			<p>
