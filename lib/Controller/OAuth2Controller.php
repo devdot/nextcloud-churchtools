@@ -26,6 +26,7 @@ use OCP\IURLGenerator;
 use OCP\IUser;
 use OCP\IUserManager;
 use OCP\IUserSession;
+use Psr\Log\LoggerInterface;
 
 class OAuth2Controller extends Controller {
 	private bool $enabled;
@@ -43,6 +44,7 @@ class OAuth2Controller extends Controller {
 		private ISession $session,
 		private IUserSession $userSession,
 		private IProvider $tokenProvider,
+		private LoggerInterface $logger,
 	) {
 		parent::__construct($AppName, $request);
 
@@ -82,6 +84,7 @@ class OAuth2Controller extends Controller {
 			$this->updateUser($user, $oauthUser);
 			// todo: groups
 			$this->loginUser($user);
+			// todo: trigger special event?
 
 			return $this->redirectLoggedInUser();
 		} catch (IdentityProviderException $e) {
@@ -121,6 +124,8 @@ class OAuth2Controller extends Controller {
 
 			// todo: default quota?
 			// todo: disable_password_confirmation ?
+
+			$this->logger->info('Created from ChurchTools login: #' . $username);
 		}
 
 		return $user;
@@ -131,12 +136,14 @@ class OAuth2Controller extends Controller {
 		$user->setDisplayName($oauthData['displayName']);
 		$user->setSystemEMailAddress($oauthData['email']);
 
-		// update avatar
-		if ($oauthData['photoURL']) {
+		if ($oauthData['photoURL'] && $this->userConfig->getUserValue($user->getUID(), $this->appName, 'oauth2_avatar') !== $oauthData['photoURL']) {
+			$this->logger->info('Update avatar for #' . $user->getUID());
+			// this little avatar changing will cause lots of DB queries!
 			try {
 				$photo = file_get_contents($oauthData['photoURL']);
-				$avatar = $this->avatarManager->getAvatar($user->getUid());
+				$avatar = $this->avatarManager->getAvatar($user->getUID());
 				$avatar->set($photo);
+				$this->userConfig->setUserValue($user->getUID(), $this->appName, 'oauth2_avatar', $oauthData['photoURL']);
 			} catch (\Throwable $e) {
 			}
 		}
@@ -163,6 +170,8 @@ class OAuth2Controller extends Controller {
 
 		$user->updateLastLoginTimestamp();
 		$this->session->set('last-password-confirm', time());
+
+		$this->logger->debug('Logged in with ChurchTools: #' . $user->getUID());
 	}
 
 	private function redirectLoggedInUser(): RedirectResponse {
