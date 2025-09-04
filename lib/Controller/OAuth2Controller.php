@@ -19,6 +19,8 @@ use OCP\Common\Exception\NotFoundException;
 use OCP\IAppConfig;
 use OCP\IAvatarManager;
 use OCP\IConfig;
+use OCP\IGroup;
+use OCP\IGroupManager;
 use OCP\IL10N;
 use OCP\IRequest;
 use OCP\ISession;
@@ -40,6 +42,7 @@ class OAuth2Controller extends Controller {
 		private IConfig $userConfig,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userManager,
+		private IGroupManager $groupManager,
 		private IAvatarManager $avatarManager,
 		private ISession $session,
 		private IUserSession $userSession,
@@ -82,7 +85,7 @@ class OAuth2Controller extends Controller {
 			// inspired by https://github.com/zorn-v/nextcloud-social-login/blob/master/lib/Service/ProviderService.php
 			$user = $this->findOrCreateUser($oauthUser);
 			$this->updateUser($user, $oauthUser);
-			// todo: groups
+			$this->updateUserGroups($user, $oauthUser);
 			$this->loginUser($user);
 			// todo: trigger special event?
 
@@ -147,6 +150,46 @@ class OAuth2Controller extends Controller {
 			} catch (\Throwable $e) {
 			}
 		}
+	}
+
+	private function updateUserGroups(IUser $user, ResourceOwnerInterface $oauthUser): void {
+		$data = $oauthUser->toArray();
+
+		$syncGroups = $this->config->getValueBool($this->appName, 'oauth2_sync_groups');
+		$syncRoleGroups = $this->config->getValueBool($this->appName, 'oauth2_sync_role_groups');
+		$createGroups = $this->config->getValueBool($this->appName, 'oauth2_create_groups');
+		$groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
+
+		// collect groups
+		$groupIds = array_merge(
+			$syncGroups ? $data['groups'] ?? [] : [],
+			$syncRoleGroups ? $data['roles'] ?? [] : [],
+		);
+
+		// early return, if nothing is enabled or found
+		if (count($groupIds) === 0) {
+			return;
+		}
+
+		// add prefix
+		$groupIds = array_map(fn (string $group) => $groupPrefix . $group, $groupIds);
+		$groupIds = array_unique($groupIds);
+
+		// fetch user groups
+		$userGroupIds = $this->groupManager->getUserGroupIds($user);
+
+		// join groups
+		$join = array_diff($groupIds, $userGroupIds);
+		$join = array_map(fn (string $gid) => $this->groupManager->get($gid) ?? ($createGroups ? $this->groupManager->createGroup($gid) : null), $join);
+		$join = array_filter($join);
+		array_map(fn (IGroup $group) => $group->addUser($user), $join);
+
+		// leave groups
+		$leave = array_diff($userGroupIds, $groupIds);
+		$leave = array_filter($leave, fn (string $gid) => str_starts_with($gid, $groupPrefix));
+		$leave = array_map(fn (string $gid) => $this->groupManager->get($gid), $leave);
+		$leave = array_filter($leave);
+		array_map(fn (IGroup $group) => $group->removeUser($user), $leave);
 	}
 
 	private function loginUser(IUser $user): void {

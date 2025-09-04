@@ -62,6 +62,9 @@ const settings = {
 	oauth2_enabled: createWatchedRef('oauth2_enabled', false),
 	oauth2_hide_default: createWatchedRef('oauth2_hide_default', false),
 	oauth2_use_username: createWatchedRef('oauth2_use_username', false),
+	oauth2_sync_groups: createWatchedRef('oauth2_sync_groups', false),
+	oauth2_sync_role_groups: createWatchedRef('oauth2_sync_role_groups', false),
+	oauth2_create_groups: createWatchedRef('oauth2_create_groups', false),
 	oauth2_redirect_uri: createRef('oauth2_redirect_uri'),
 	oauth2_client_id: ref(''),
 	oauth2_login_label: createRef('oauth2_login_label'),
@@ -131,6 +134,19 @@ function runJob() {
 				:checked.sync="settings.oauth2_use_username.value">
 				{{ t('settings', 'Use ChurchTools Username') }}
 			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.oauth2_sync_groups.value">
+				{{ t('settings', 'Sync Groups') }}
+			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.oauth2_sync_role_groups.value">
+				{{ t('settings', 'Sync Role Groups') }}
+			</NcCheckboxRadioSwitch>
+			<NcCheckboxRadioSwitch type="switch"
+				:checked.sync="settings.oauth2_create_groups.value">
+				{{ t('settings', 'Create Groups (if any group sync is enabled)') }}
+			</NcCheckboxRadioSwitch>
+
 			<NcInputField v-model="settings.oauth2_client_id.value"
 				:label="t('churchtools_integration', 'Client Identifier')"
 				@change="save('oauth2_client_id')" />

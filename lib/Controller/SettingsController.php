@@ -61,6 +61,9 @@ class SettingsController extends Controller {
 			case 'oauth2_enabled':
 			case 'oauth2_hide_default':
 			case 'oauth2_use_username':
+			case 'oauth2_sync_groups':
+			case 'oauth2_sync_role_groups':
+			case 'oauth2_create_groups':
 			case 'api_enabled':
 			case 'groupfolders_enabled':
 				assert(is_bool($value));
