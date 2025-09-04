@@ -134,6 +134,10 @@ function runJob() {
 				:checked.sync="settings.oauth2_use_username.value">
 				{{ t('settings', 'Use ChurchTools Username') }}
 			</NcCheckboxRadioSwitch>
+
+			<NcNoteCard v-if="settings.api_enabled.value" type="info">
+				You may disable all group sync options here if you've configured group sync through the API User. It is recommended to use the API User settings for syncing groups instead of OAuth2.
+			</NcNoteCard>
 			<NcCheckboxRadioSwitch type="switch"
 				:checked.sync="settings.oauth2_sync_groups.value">
 				{{ t('settings', 'Sync Groups') }}

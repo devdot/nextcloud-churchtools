@@ -160,16 +160,15 @@ class OAuth2Controller extends Controller {
 		$createGroups = $this->config->getValueBool($this->appName, 'oauth2_create_groups');
 		$groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
 
+		if (!$syncGroups || !$syncRoleGroups) {
+			return;
+		}
+
 		// collect groups
 		$groupIds = array_merge(
 			$syncGroups ? $data['groups'] ?? [] : [],
 			$syncRoleGroups ? $data['roles'] ?? [] : [],
 		);
-
-		// early return, if nothing is enabled or found
-		if (count($groupIds) === 0) {
-			return;
-		}
 
 		// add prefix
 		$groupIds = array_map(fn (string $group) => $groupPrefix . $group, $groupIds);
