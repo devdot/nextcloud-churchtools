@@ -191,7 +191,7 @@ function runJob() {
 		<fieldset class="section">
 			<h2>{{ t('churchtools_integration', 'Groupfolders') }}</h2>
 			<NcNoteCard type="info">
-				Make sure the <a href="https://github.com/nextcloud/groupfolders/">Groupfolders app</a> is active if you're using this option.
+				Make sure the <a href="https://github.com/nextcloud/groupfolders/">Groupfolders app</a> is active and the API User is configured if you're using this option.
 			</NcNoteCard>
 
 			<NcCheckboxRadioSwitch type="switch"

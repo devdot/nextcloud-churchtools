@@ -111,6 +111,10 @@ class Update extends QueuedJob {
 	}
 
 	private function updateGroups(): void {
+		if (!$this->config->getValueBool($this->appName, 'groupfolders_enabled')) {
+			return;
+		}
+
 		// load the group folders now
 		$this->groupFolders = [];
 		foreach ($this->folderManager->getAllFolders() as $folder) {
