@@ -5,6 +5,7 @@ namespace OCA\ChurchToolsIntegration\Jobs;
 use CTApi\Models\Common\Tag\Tag;
 use CTApi\Models\Groups\Group\Group;
 use CTApi\Models\Groups\Person\PersonRequest;
+use Exception;
 use OCA\ChurchToolsIntegration\Client;
 use OCA\GroupFolders\ACL\RuleManager;
 use OCA\GroupFolders\Folder\FolderManager;
@@ -20,6 +21,9 @@ use OCP\IUser;
 use OCP\IUserManager;
 use OCP\Server;
 
+/**
+ * @psalm-api
+ */
 class Update extends QueuedJob {
 
 	private string $userPrefix;
@@ -38,7 +42,7 @@ class Update extends QueuedJob {
 	private array $ctGroups = [];
 
 	/**
-	 * @var Tag[]
+	 * @var Tag[][]
 	 */
 	private array $ctGroupTags = [];
 
@@ -55,7 +59,7 @@ class Update extends QueuedJob {
 		private IGroupManager $groupManager,
 		private FolderManager $folderManager,
 		private RuleManager $ruleManager,
-		private IRootFolder $rootFolder,
+		IRootFolder $rootFolder,
 		private readonly IDBConnection $connection,
 		private Client $client,
 	) {
@@ -69,12 +73,15 @@ class Update extends QueuedJob {
 		$this->rootStorageId = $rootFolder->getMountPoint()->getNumericStorageId() ?? -1;
 	}
 
-	public static function dispatch() {
+	public static function dispatch(): void {
 		$job = Server::get(self::class);
 		$list = Server::get(IJobList::class);
-		return $job->start($list);
+		$job->start($list);
 	}
 
+	/**
+	 * @param array $argument
+	 */
 	protected function run($argument) {
 		$auth = $this->client->auth();
 
@@ -102,10 +109,10 @@ class Update extends QueuedJob {
 			// now loop through the groups and create objects
 			foreach ($groups as $group) {
 				$this->ctGroups[$group['id']] = Group::createModelsFromArray($group)[0];
+				/** @psalm-suppress InvalidPropertyAssignmentValue */
 				$this->ctGroupTags[$group['id']] = Tag::createModelsFromArray($group['tags']);
 			}
 		} catch (\Throwable $e) {
-			var_dump($e);
 			throw $e;
 		}
 	}
@@ -138,10 +145,10 @@ class Update extends QueuedJob {
 
 	private function updateGroupWithFolder(Group $group): void {
 		// make sure the group is created
-		$groupName = $group->getName();
+		$groupName = $group->getName() ?? '';
 		$ncGroupName = $this->groupPrefix . $groupName;
 		if (($ncGroup = $this->groupManager->get($ncGroupName)) === null) {
-			$ncGroup = $this->groupManager->createGroup($ncGroupName);
+			$ncGroup = $this->groupManager->createGroup($ncGroupName) ?? throw new Exception('Could not create group ' . $ncGroupName);
 		}
 
 		// always add a leader group here
@@ -153,7 +160,7 @@ class Update extends QueuedJob {
 			// create a group folder here!
 			// TODO: perhaps keep a log of this in DB?
 			$id = $this->folderManager->createFolder($groupName);
-			$folder = $this->folderManager->getFolder($id);
+			$folder = $this->folderManager->getFolder($id) ?? throw new Exception('Folder does not exist #' . $id);
 		}
 
 		// and configure that group
@@ -170,6 +177,7 @@ class Update extends QueuedJob {
 
 		// set ACL for those folders
 		$path = '__groupfolders/' . $folder['id'];
+		/** @psalm-suppress MissingDependency */
 		$rules = $this->ruleManager->getAllRulesForPaths($this->rootStorageId, [$path]);
 		if (count($rules) === 0) {
 			// find the file id
@@ -199,13 +207,8 @@ class Update extends QueuedJob {
 	private function addLeaderGroup(string $name): IGroup {
 		// TODO: maybe keep a record of these groups in a DB?
 		$leaderName = $this->groupPrefix . $name . $this->leaderGroupSuffix;
-		return $this->groupManager->get($leaderName) ?? $this->groupManager->createGroup($leaderName);
+		return $this->groupManager->get($leaderName) ?? $this->groupManager->createGroup($leaderName) ?? throw new Exception('Could not create new group ' . $leaderName);
 
-	}
-
-	private function getLeaderGroup(string $name): ?IGroup {
-		$leaderName = $this->groupPrefix . $name . $this->leaderGroupSuffix;
-		return $this->groupManager->get($leaderName);
 	}
 
 	private function updatePersons(): void {

@@ -15,7 +15,7 @@
 		<nextcloud min-version="30" max-version="31"/>
 	</dependencies>
 	<settings>
-		<admin-section>OCA\ChurchToolsIntegration\Sections\Admin</admin-section>
+		<admin-section>OCA\ChurchToolsIntegration\Settings\Section</admin-section>
 		<admin>OCA\ChurchToolsIntegration\Settings\Admin</admin>
 	</settings>
 	<background-jobs>

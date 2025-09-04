@@ -9,6 +9,9 @@ use OCP\IAppConfig;
 use OCP\IL10N;
 use OCP\Util;
 
+/**
+ * @psalm-api
+ */
 class DefaultLogin implements IAlternativeLogin {
 	public function __construct(
 		private string $appName,

@@ -7,10 +7,11 @@ use OCP\EventDispatcher\Event;
 use OCP\EventDispatcher\IEventListener;
 use OCP\User\Events\PostLoginEvent;
 
+/**
+ * @template-implements IEventListener<PostLoginEvent>
+ */
 class LoginListener implements IEventListener {
 	public function handle(Event $event): void {
-		if ($event instanceof PostLoginEvent) {
-			UpdatePerson::dispatch($event->getUser());
-		}
+		UpdatePerson::dispatch($event->getUser());
 	}
 }

@@ -5,16 +5,17 @@ namespace OCA\ChurchToolsIntegration\Settings;
 use OCP\AppFramework\Http\TemplateResponse;
 use OCP\AppFramework\Services\IInitialState;
 use OCP\IAppConfig;
-use OCP\IL10N;
 use OCP\IURLGenerator;
-use OCP\Settings\ISettings;
+use OCP\Settings\IDelegatedSettings;
 
-class Admin implements ISettings {
+/**
+ * @psalm-api
+ */
+class Admin implements IDelegatedSettings {
 
 
 	public function __construct(
 		private string $appName,
-		private IL10N $l,
 		private IAppConfig $config,
 		private IInitialState $state,
 		private IURLGenerator $urlGenerator,
@@ -54,17 +55,18 @@ class Admin implements ISettings {
 		$this->state->provideInitialState($state, $this->config->getValueBool($this->appName, $state, $default, $lazy));
 	}
 
+	public function getName(): string {
+		return $this->appName . '_admin';
+	}
+
+	public function getAuthorizedAppConfig(): array {
+		return [];
+	}
+
 	public function getSection() {
 		return 'churchtools_integration'; // Name of the previously created section.
 	}
 
-	/**
-	 * @return int whether the form should be rather on the top or bottom of
-	 *             the admin section. The forms are arranged in ascending order of the
-	 *             priority values. It is required to return a value between 0 and 100.
-	 *
-	 * E.g.: 70
-	 */
 	public function getPriority() {
 		return 1;
 	}

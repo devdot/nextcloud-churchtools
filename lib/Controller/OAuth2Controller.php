@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\ChurchToolsIntegration\Controller;
 
 use Devdot\ChurchTools\OAuth2\Client\Provider\ChurchTools;
+use Exception;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use OCP\AppFramework\Controller;
@@ -21,7 +22,6 @@ use OCP\IAvatarManager;
 use OCP\IConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
-use OCP\IL10N;
 use OCP\IRequest;
 use OCP\ISession;
 use OCP\IURLGenerator;
@@ -30,6 +30,9 @@ use OCP\IUserManager;
 use OCP\IUserSession;
 use Psr\Log\LoggerInterface;
 
+/**
+ * @psalm-api
+ */
 class OAuth2Controller extends Controller {
 	private bool $enabled;
 	private ChurchTools $provider;
@@ -37,7 +40,6 @@ class OAuth2Controller extends Controller {
 	public function __construct(
 		string $AppName,
 		IRequest $request,
-		private IL10N $l,
 		private IAppConfig $config,
 		private IConfig $userConfig,
 		private IURLGenerator $urlGenerator,
@@ -64,7 +66,7 @@ class OAuth2Controller extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[UseSession]
-	public function redirect() {
+	public function redirect(): RedirectResponse {
 		$this->checkEnabledMiddleware();
 		return new RedirectResponse($this->provider->getAuthorizationUrl());
 	}
@@ -73,13 +75,14 @@ class OAuth2Controller extends Controller {
 	#[PublicPage]
 	#[NoCSRFRequired]
 	#[UseSession]
-	public function login(string $code) {
+	public function login(string $code): RedirectResponse {
 		$this->checkEnabledMiddleware();
 		try {
 			// attempt to get access tokens
 			$tokens = $this->provider->getAccessTokenFromCode($code);
 
 			// get the user that was authenticated
+			/** @psalm-suppress ArgumentTypeCoercion */
 			$oauthUser = $this->provider->getResourceOwner($tokens);
 
 			// inspired by https://github.com/zorn-v/nextcloud-social-login/blob/master/lib/Service/ProviderService.php
@@ -123,7 +126,7 @@ class OAuth2Controller extends Controller {
 
 		if ($user === null) {
 			$password = '341@$a' . substr(base64_encode(random_bytes(64)), 0, 30);
-			$user = $this->userManager->createUser($username, $password);
+			$user = $this->userManager->createUser($username, $password) ?: throw new Exception('Could not create user #' . $username);
 
 			// todo: default quota?
 			// todo: disable_password_confirmation ?
@@ -160,7 +163,7 @@ class OAuth2Controller extends Controller {
 		$createGroups = $this->config->getValueBool($this->appName, 'oauth2_create_groups');
 		$groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
 
-		if (!$syncGroups || !$syncRoleGroups) {
+		if (!$syncGroups && !$syncRoleGroups) {
 			return;
 		}
 
@@ -193,17 +196,24 @@ class OAuth2Controller extends Controller {
 
 	private function loginUser(IUser $user): void {
 		// assuming user session is OC\User\Session https://github.com/nextcloud/server/blob/13210bc7bdc2578d7637ff7339c0db0198bbcef9/lib/private/User/Session.php#L67
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->userSession->getSession()->regenerateId();
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->userSession->setTokenProvider($this->tokenProvider);
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->userSession->createSessionToken($this->request, $user->getUID(), $user->getUID());
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->userSession->createRememberMeToken($user);
 
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$token = $this->tokenProvider->getToken($this->userSession->getSession()->getId());
 		$scope = $token->getScopeAsArray();
 		$scope[IToken::SCOPE_SKIP_PASSWORD_VALIDATION] = true;
 		$token->setScope($scope);
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->tokenProvider->updateToken($token);
 
+		/** @psalm-suppress UndefinedInterfaceMethod */
 		$this->userSession->completeLogin($user, [
 			'loginName' => $user->getUID(),
 			'password' => '',

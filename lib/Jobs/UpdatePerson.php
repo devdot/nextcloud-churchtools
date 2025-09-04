@@ -2,6 +2,7 @@
 
 namespace OCA\ChurchToolsIntegration\Jobs;
 
+use CTApi\Models\Groups\GroupTypeRole\GroupTypeRole;
 use CTApi\Models\Groups\Person\Person;
 use CTApi\Models\Groups\Person\PersonRequest;
 use OCA\ChurchToolsIntegration\Client;
@@ -12,37 +13,41 @@ use OCP\IGroupManager;
 use OCP\IUser;
 use OCP\Server;
 
+/**
+ * @psalm-api
+ */
 class UpdatePerson extends QueuedJob {
 	private string $userPrefix;
 	private string $groupPrefix;
 	private string $leaderGroupSuffix;
-	private string $groupWithFolderTag;
 
 	public function __construct(
-		private string $appName,
+		string $appName,
 		\OCP\AppFramework\Utility\ITimeFactory $time,
-		private IAppConfig $config,
+		IAppConfig $config,
 		private IGroupManager $groupManager,
 		private Client $client,
 	) {
 		parent::__construct($time);
 
-		$this->userPrefix = $this->config->getValueString($this->appName, 'user_prefix');
-		$this->groupPrefix = $this->config->getValueString($this->appName, 'group_prefix');
-		$this->leaderGroupSuffix = $this->config->getValueString($this->appName, 'groupfolders_leader_group_suffix');
-		$this->groupWithFolderTag = $this->config->getValueString($this->appName, 'groupfolders_tag');
+		$this->userPrefix = $config->getValueString($appName, 'user_prefix');
+		$this->groupPrefix = $config->getValueString($appName, 'group_prefix');
+		$this->leaderGroupSuffix = $config->getValueString($appName, 'groupfolders_leader_group_suffix');
 	}
 
-	public static function dispatch(IUser $user, ?Person $person = null) {
+	public static function dispatch(IUser $user, ?Person $person = null): void {
 		$job = Server::get(self::class);
 		$job->setArgument([
 			'user' => $user,
 			'person' => $person,
 		]);
 		$list = Server::get(IJobList::class);
-		return $job->start($list);
+		$job->start($list);
 	}
 
+	/**
+	 * @param array{user: IUser, person: ?Person} $argument
+	 */
 	protected function run($argument) {
 		$auth = $this->client->auth();
 
@@ -54,14 +59,14 @@ class UpdatePerson extends QueuedJob {
 		$ctUser = $argument['person'] ?? null;
 		if ($ctUser === null) {
 			$id = (int)substr($user->getUID(), strlen($this->userPrefix));
-			$ctUser = PersonRequest::find($id ?? -1);
+			$ctUser = PersonRequest::find($id);
 			if ($ctUser === null) {
 				return;
 			}
 		}
 
 		// add user to groups
-		$groups = $ctUser->requestGroups()->get();
+		$groups = $ctUser->requestGroups()?->get() ?? [];
 		$removeGroups = array_fill_keys($this->groupManager->getUserGroupIds($user), true);
 		foreach ($groups as $personGroup) {
 			$ctGroup = $personGroup->getGroup();
@@ -83,7 +88,8 @@ class UpdatePerson extends QueuedJob {
 
 		// and remove from groups that are not right
 		$removeGroups = array_filter($removeGroups);
-		foreach ($removeGroups as $groupId => $true) {
+		$removeGroups = array_keys($removeGroups);
+		foreach ($removeGroups as $groupId) {
 			$group = $this->groupManager->get($groupId);
 			if ($group === null) {
 				continue;
@@ -95,6 +101,6 @@ class UpdatePerson extends QueuedJob {
 	private function isGroupLeader(int $groupRoleTypeId): bool {
 		$groupRoleTypes = $this->client->getGroupRoleTypes();
 		$type = $groupRoleTypes[$groupRoleTypeId] ?? null;
-		return $type && ($type->getIsLeader() or $type->getName() === 'Administrator');
+		return $type instanceof GroupTypeRole && ($type->getIsLeader() or $type->getName() === 'Administrator');
 	}
 }

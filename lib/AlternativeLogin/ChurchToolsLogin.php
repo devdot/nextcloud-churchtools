@@ -11,6 +11,9 @@ use OCP\ISession;
 use OCP\IURLGenerator;
 use OCP\Util;
 
+/**
+ * @psalm-api
+ */
 class ChurchToolsLogin implements IAlternativeLogin {
 	public function __construct(
 		private string $appName,

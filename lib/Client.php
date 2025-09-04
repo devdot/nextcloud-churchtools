@@ -19,7 +19,8 @@ class Client {
 	private ?Auth $authData = null;
 
 	/**
-	 * @var \CTApi\Models\Groups\GroupTypeRole\GroupTypeRole[]
+	 * @var \CTApi\Models\Groups\GroupTypeRole\GroupTypeRole[] $groupRoleTypes
+	 * @psalm-suppress PropertyNotSetInConstructor
 	 */
 	private array $groupRoleTypes;
 
@@ -81,10 +82,11 @@ class Client {
 		CTConfig::setConfig($this->config);
 
 		$cookie = CTConfig::getSessionCookieString();
-		$this->ocpConfig->setValueString($this->appName, 'api_session', $cookie);
+		$this->ocpConfig->setValueString($this->appName, 'api_session', $cookie ?? '');
 	}
 
 	public function getGroupRoleTypes(): array {
+		/** @psalm-suppress RedundantPropertyInitializationCheck */
 		return $this->groupRoleTypes ??= $this->requestGroupRoleTypes();
 	}
 

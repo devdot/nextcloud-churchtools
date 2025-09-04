@@ -14,21 +14,22 @@ use OCP\AppFramework\Http\Attribute\FrontpageRoute;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IAppConfig;
-use OCP\IL10N;
 use OCP\IRequest;
 
+/**
+ * @psalm-api
+ */
 class SettingsController extends Controller {
 	public function __construct(
 		string $AppName,
 		IRequest $request,
-		private IL10N $l,
 		private IAppConfig $config,
 	) {
 		parent::__construct($AppName, $request);
 	}
 
 	#[FrontpageRoute('POST', '/settings/run-job')]
-	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
+	#[AuthorizedAdminSetting(settings: \OCA\ChurchToolsIntegration\Settings\Admin::class)]
 	#[NoCSRFRequired]
 	public function runJob(): JSONResponse {
 		try {
@@ -40,7 +41,7 @@ class SettingsController extends Controller {
 	}
 
 	#[FrontpageRoute('PUT', '/settings/set')]
-	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
+	#[AuthorizedAdminSetting(settings: \OCA\ChurchToolsIntegration\Settings\Admin::class)]
 	public function set(string $setting, mixed $value): JSONResponse {
 		switch ($setting) {
 			case 'url':
@@ -75,7 +76,7 @@ class SettingsController extends Controller {
 	}
 
 	#[FrontpageRoute('POST', '/settings/check_api')]
-	#[AuthorizedAdminSetting(settings: OCA\ChurchToolsIntegration\Settings\Admin::class)]
+	#[AuthorizedAdminSetting(settings: \OCA\ChurchToolsIntegration\Settings\Admin::class)]
 	public function checkApi(): JSONResponse {
 		$url = $this->config->getValueString($this->appName, 'url');
 		try {

@@ -1,12 +1,15 @@
 <?php
 
-namespace OCA\ChurchToolsIntegration\Sections;
+namespace OCA\ChurchToolsIntegration\Settings;
 
 use OCP\IL10N;
 use OCP\IURLGenerator;
 use OCP\Settings\IIconSection;
 
-class Admin implements IIconSection {
+/**
+ * @psalm-api
+ */
+class Section implements IIconSection {
 	public function __construct(
 		private IL10N $l,
 		private IURLGenerator $urlGenerator,

@@ -14,6 +14,9 @@ use OCP\AppFramework\Bootstrap\IRegistrationContext;
 use OCP\EventDispatcher\IEventDispatcher;
 use OCP\User\Events\PostLoginEvent;
 
+/**
+ * @psalm-api
+ */
 class Application extends App implements IBootstrap {
 	public const APP_ID = 'churchtools_integration';
 
