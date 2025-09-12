@@ -5,7 +5,7 @@
 	<name>Church Tools Integration</name>
 	<summary>Integrate with your ChurchTools instance</summary>
 	<description>Improve integration with your ChurchTools instance beyond the available OAuth2 SSO. Manage group folders, update stale users</description>
-	<version>1.0.0</version>
+	<version>0.2.1</version>
 	<licence>agpl</licence>
 	<author mail="mail@thomaskuschan.de" homepage="">Thomas Kuschan</author>
 	<namespace>ChurchToolsIntegration</namespace>
