@@ -9,7 +9,12 @@ use CTApi\Exceptions\CTAuthException;
 use CTApi\Models\Common\Auth\Auth;
 use CTApi\Models\Groups\GroupTypeRole\GroupTypeRoleRequest;
 use GuzzleHttp\ClientTrait;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
+use GuzzleHttp\Utils;
 use OCP\IAppConfig;
+use OCP\IConfig;
+use Psr\Http\Message\RequestInterface;
 
 class Client {
 	use ClientTrait;
@@ -27,9 +32,16 @@ class Client {
 	public function __construct(
 		private string $appName,
 		private IAppConfig $ocpConfig,
+		private IConfig $serverConfig,
 	) {
 		$this->config = CTConfig::createConfig();
-		$this->client = CTClient::createClient();
+		$stack = new HandlerStack();
+		$stack->setHandler(Utils::chooseHandler());
+		$stack->push(Middleware::mapRequest(function (RequestInterface $request) {
+			$name = $this->ocpConfig->getValueString('theming', 'name') ?? 'Nextcloud';
+			return $request->withHeader('User-Agent', $name . ' (devdot/nextcloud-churchtools)');
+		}));
+		$this->client = CTClient::createClient($stack);
 
 		CTLog::enableFileLog(false);
 		CTConfig::setConfig($this->config);
