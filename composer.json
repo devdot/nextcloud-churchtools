@@ -37,7 +37,7 @@
 	},
 	"require-dev": {
 		"nextcloud/groupfolders": "^19.1",
-		"nextcloud/ocp": "dev-stable31",
+		"nextcloud/ocp": "dev-stable32",
 		"roave/security-advisories": "dev-latest"
 	},
 	"config": {
