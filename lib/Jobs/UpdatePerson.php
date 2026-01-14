@@ -59,7 +59,10 @@ class UpdatePerson extends QueuedJob {
 		$ctUser = $argument['person'] ?? null;
 		if ($ctUser === null) {
 			$id = (int)substr($user->getUID(), strlen($this->userPrefix));
-			$ctUser = PersonRequest::find($id);
+
+			// try to find through search, so it doesn't clutter CT logs/audit trails
+			$ctUser = PersonRequest::where('ids', [$id])->get()[0] ?? PersonRequest::find($id);
+
 			if ($ctUser === null) {
 				return;
 			}
