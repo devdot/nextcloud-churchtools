@@ -13,7 +13,6 @@ use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
 use GuzzleHttp\Utils;
 use OCP\IAppConfig;
-use OCP\IConfig;
 use Psr\Http\Message\RequestInterface;
 
 class Client {
@@ -32,7 +31,6 @@ class Client {
 	public function __construct(
 		private string $appName,
 		private IAppConfig $ocpConfig,
-		private IConfig $serverConfig,
 	) {
 		$this->config = CTConfig::createConfig();
 		$stack = new HandlerStack();
@@ -66,7 +64,7 @@ class Client {
 		CTClient::setClient($this->client);
 
 		// attempt login with session
-		$session = $this->ocpConfig->getValueString($this->appName, 'session', '');
+		$session = $this->ocpConfig->getValueString($this->appName, 'api_session', '');
 		if (!empty($session)) {
 			try {
 				$auth = CTConfig::authWithSessionCookie($session);
