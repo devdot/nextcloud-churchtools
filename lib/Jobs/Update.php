@@ -57,8 +57,8 @@ class Update extends QueuedJob {
 		private IAppConfig $config,
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
-		private FolderManager $folderManager,
-		private RuleManager $ruleManager,
+		private ?FolderManager $folderManager,
+		private ?RuleManager $ruleManager,
 		IRootFolder $rootFolder,
 		private readonly IDBConnection $connection,
 		private Client $client,
@@ -118,7 +118,7 @@ class Update extends QueuedJob {
 	}
 
 	private function updateGroups(): void {
-		if (!$this->config->getValueBool($this->appName, 'groupfolders_enabled')) {
+		if (!$this->config->getValueBool($this->appName, 'groupfolders_enabled') || $this->folderManager === null || $this->ruleManager === null) {
 			return;
 		}
 

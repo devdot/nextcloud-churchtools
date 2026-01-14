@@ -11,7 +11,6 @@ use CTApi\Models\Groups\GroupTypeRole\GroupTypeRoleRequest;
 use GuzzleHttp\ClientTrait;
 use GuzzleHttp\HandlerStack;
 use GuzzleHttp\Middleware;
-use GuzzleHttp\Utils;
 use OCP\IAppConfig;
 use Psr\Http\Message\RequestInterface;
 
@@ -33,8 +32,7 @@ class Client {
 		private IAppConfig $ocpConfig,
 	) {
 		$this->config = CTConfig::createConfig();
-		$stack = new HandlerStack();
-		$stack->setHandler(Utils::chooseHandler());
+		$stack = HandlerStack::create();
 		$stack->push(Middleware::mapRequest(function (RequestInterface $request) {
 			$name = $this->ocpConfig->getValueString('theming', 'name') ?? 'Nextcloud';
 			return $request->withHeader('User-Agent', $name . ' (devdot/nextcloud-churchtools)');
