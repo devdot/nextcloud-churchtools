@@ -5,14 +5,14 @@
 	<name>Church Tools Integration</name>
 	<summary>Integrate with your ChurchTools instance</summary>
 	<description>Improve integration with your ChurchTools instance beyond the available OAuth2 SSO. Manage group folders, update stale users</description>
-	<version>0.2.3</version>
+	<version>0.3.0</version>
 	<licence>agpl</licence>
 	<author mail="mail@thomaskuschan.de" homepage="https://thomaskuschan.de">Thomas Kuschan</author>
 	<namespace>ChurchToolsIntegration</namespace>
 	<category>integration</category>
 	<bugs>https://github.com/devdot/nextcloud-churchtools/issues</bugs>
 	<dependencies>
-		<nextcloud min-version="30" max-version="31"/>
+		<nextcloud min-version="30" max-version="32"/>
 	</dependencies>
 	<settings>
 		<admin-section>OCA\ChurchToolsIntegration\Settings\Section</admin-section>
