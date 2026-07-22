@@ -1,6 +1,6 @@
 {
 	"name": "devdot/nextcloud-churchtools",
-	"version": "0.5.0",
+	"version": "0.5.1",
 	"description": "Improve integration with your ChurchTools instance beyond the available OAuth2 SSO. Manage group folders, update stale users",
 	"license": "AGPL-3.0-or-later",
 	"authors": [
