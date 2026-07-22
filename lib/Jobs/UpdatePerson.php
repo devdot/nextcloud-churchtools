@@ -48,7 +48,7 @@ class UpdatePerson extends QueuedJob {
 	/**
 	 * @param array{user: IUser, person: ?Person} $argument
 	 */
-	protected function run($argument) {
+	protected function run($argument): void {
 		$auth = $this->client->auth();
 
 		if (!$auth) {

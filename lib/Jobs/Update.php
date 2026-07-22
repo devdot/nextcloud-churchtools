@@ -82,7 +82,7 @@ class Update extends QueuedJob {
 	/**
 	 * @param array $argument
 	 */
-	protected function run($argument) {
+	protected function run($argument): void {
 		$auth = $this->client->auth();
 
 		if (!$auth) {

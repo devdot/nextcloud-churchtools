@@ -15,6 +15,9 @@ use OCP\IURLGenerator;
  * @psalm-suppress UndefinedClass
  */
 class AlternativeLoginProvider implements IAlternativeLoginProvider {
+	/**
+	 * @psalm-suppress PossiblyUnusedMethod
+	 */
 	public function __construct(
         private string $appName,
 		private IRequest $request,

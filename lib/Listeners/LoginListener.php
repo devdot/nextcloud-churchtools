@@ -9,6 +9,7 @@ use OCP\User\Events\PostLoginEvent;
 
 /**
  * @template-implements IEventListener<PostLoginEvent>
+ * @psalm-suppress UnusedClass
  */
 class LoginListener implements IEventListener {
 	public function handle(Event $event): void {
