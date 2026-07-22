@@ -17,9 +17,9 @@ use OCP\AppFramework\Http\RedirectResponse;
 use OCP\Authentication\Token\IProvider;
 use OCP\Authentication\Token\IToken;
 use OCP\Common\Exception\NotFoundException;
+use OCP\Config\IUserConfig;
 use OCP\IAppConfig;
 use OCP\IAvatarManager;
-use OCP\IConfig;
 use OCP\IGroup;
 use OCP\IGroupManager;
 use OCP\IRequest;
@@ -41,7 +41,7 @@ class OAuth2Controller extends Controller {
 		string $AppName,
 		IRequest $request,
 		private IAppConfig $config,
-		private IConfig $userConfig,
+		private IUserConfig $userConfig,
 		private IURLGenerator $urlGenerator,
 		private IUserManager $userManager,
 		private IGroupManager $groupManager,
@@ -142,14 +142,14 @@ class OAuth2Controller extends Controller {
 		$user->setDisplayName($oauthData['displayName']);
 		$user->setSystemEMailAddress($oauthData['email']);
 
-		if ($oauthData['photoURL'] && $this->userConfig->getUserValue($user->getUID(), $this->appName, 'oauth2_avatar') !== $oauthData['photoURL']) {
+		if ($oauthData['photoURL'] && $this->userConfig->getValueString($user->getUID(), $this->appName, 'oauth2_avatar') !== $oauthData['photoURL']) {
 			$this->logger->info('Update avatar for #' . $user->getUID());
 			// this little avatar changing will cause lots of DB queries!
 			try {
 				$photo = file_get_contents($oauthData['photoURL']);
 				$avatar = $this->avatarManager->getAvatar($user->getUID());
 				$avatar->set($photo);
-				$this->userConfig->setUserValue($user->getUID(), $this->appName, 'oauth2_avatar', $oauthData['photoURL']);
+				$this->userConfig->setValueString($user->getUID(), $this->appName, 'oauth2_avatar', $oauthData['photoURL']);
 			} catch (\Throwable $e) {
 			}
 		}
