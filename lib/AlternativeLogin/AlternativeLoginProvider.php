@@ -26,7 +26,6 @@ class AlternativeLoginProvider implements IAlternativeLoginProvider {
 	}
 
 	public function getAlternativeLogins(): array {
-        die('heee');
         return [
             new ChurchToolsLogin($this->appName, $this->appConfig, $this->urlGenerator, $this->request, $this->session),
             new DefaultLogin($this->appName, $this->appConfig, $this->l10n),
