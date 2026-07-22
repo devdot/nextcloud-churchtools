@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\ChurchToolsIntegration\AppInfo;
 
-use OCA\ChurchToolsIntegration\AlternativeLogin\ChurchToolsLogin;
-use OCA\ChurchToolsIntegration\AlternativeLogin\DefaultLogin;
+use OCA\ChurchToolsIntegration\AlternativeLogin\AlternativeLoginProvider;
 use OCA\ChurchToolsIntegration\Listeners\LoginListener;
 use OCP\AppFramework\App;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -26,13 +25,12 @@ class Application extends App implements IBootstrap {
 
 	public function register(IRegistrationContext $context): void {
 		require_once(__DIR__ . '/../../vendor/autoload.php');
-
+		
 		// register PostLogin for the UpdatePerson Job
 		$context->registerEventListener(PostLoginEvent::class, LoginListener::class);
-
+		
 		// register our churchtools login
-		$context->registerAlternativeLogin(ChurchToolsLogin::class);
-		$context->registerAlternativeLogin(DefaultLogin::class);
+		$context->registerAlternativeLoginProvider(AlternativeLoginProvider::class);
 	}
 
 	public function boot(IBootContext $context): void {
