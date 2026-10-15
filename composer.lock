@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "903f905f95ae71ee60613f022831b0c4",
+    "content-hash": "6d6ac5423775e859187e8e284433dcaa",
     "packages": [
         {
             "name": "5pm-hdh/churchtools-api",
@@ -1177,11 +1177,11 @@
     "packages-dev": [
         {
             "name": "nextcloud/groupfolders",
-            "version": "22.0.3",
+            "version": "1-stable34",
             "source": {
                 "type": "git",
                 "url": "https://github.com/nextcloud/groupfolders",
-                "reference": "stable31"
+                "reference": "stable34"
             },
             "type": "library"
         },
