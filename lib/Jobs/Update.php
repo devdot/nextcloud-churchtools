@@ -125,6 +125,7 @@ class Update extends QueuedJob {
 		// load the group folders now
 		$this->groupFolders = [];
 		foreach ($this->folderManager->getAllFolders() as $folder) {
+			$folder = $folder->toArray();
 			$this->groupFolders[$folder['mount_point']] = $folder;
 		}
 
