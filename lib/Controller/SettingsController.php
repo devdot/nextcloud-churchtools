@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\ChurchToolsIntegration\Controller;
 
+use Devdot\ChurchTools\Api\Client;
 use Exception;
-use GuzzleHttp\Client;
+use GuzzleHttp\Client as GuzzleClient;
 use JsonException;
 use OCA\ChurchToolsIntegration\Jobs\Update;
 use OCP\AppFramework\Controller;
@@ -48,7 +49,6 @@ class SettingsController extends Controller {
 				assert(is_string($value));
 				$value = $this->sanitizeUrl($value);
 				return $this->setString($setting, $value);
-
 			case 'user_prefix':
 			case 'group_prefix':
 			case 'oauth2_client_id':
@@ -58,7 +58,6 @@ class SettingsController extends Controller {
 			case 'groupfolders_leader_group_suffix':
 				assert(is_string($value));
 				return $this->setString($setting, $value);
-
 			case 'oauth2_enabled':
 			case 'oauth2_hide_default':
 			case 'oauth2_use_username':
@@ -69,7 +68,6 @@ class SettingsController extends Controller {
 			case 'groupfolders_enabled':
 				assert(is_bool($value));
 				return $this->setBool($setting, $value);
-
 			default:
 				return new JSONResponse([], 400);
 		}
@@ -77,19 +75,18 @@ class SettingsController extends Controller {
 
 	#[FrontpageRoute('POST', '/settings/check_api')]
 	#[AuthorizedAdminSetting(settings: \OCA\ChurchToolsIntegration\Settings\Admin::class)]
-	public function checkApi(): JSONResponse {
+	public function checkApi(Client $apiClient): JSONResponse {
 		$url = $this->config->getValueString($this->appName, 'url');
 		try {
-			$client = new Client();
+			$client = new GuzzleClient();
 			$request = $client->get($url . '/api/info');
 			$response = $request->getBody()->getContents();
 			$info = json_decode($response, null, 512, JSON_THROW_ON_ERROR);
 
 			$userId = null;
 			if ($this->config->getValueBool($this->appName, 'api_enabled')) {
-				$api = new \OCA\ChurchToolsIntegration\Client($this->appName, $this->config);
-				$auth = $api->auth();
-				$userId = $auth?->userId ?? null;
+				$whoami = $apiClient->getWhoami();
+				$userId = $whoami->data->id;
 			}
 
 			return new JSONResponse([

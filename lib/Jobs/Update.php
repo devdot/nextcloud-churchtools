@@ -2,11 +2,9 @@
 
 namespace OCA\ChurchToolsIntegration\Jobs;
 
-use CTApi\Models\Common\Tag\Tag;
-use CTApi\Models\Groups\Group\Group;
-use CTApi\Models\Groups\Person\PersonRequest;
+use Devdot\ChurchTools\Api\Client;
+use Devdot\ChurchTools\Api\Generated\Model\Group;
 use Exception;
-use OCA\ChurchToolsIntegration\Client;
 use OCA\GroupFolders\ACL\RuleManager;
 use OCA\GroupFolders\Folder\FolderManager;
 use OCP\BackgroundJob\IJobList;
@@ -32,17 +30,17 @@ class Update extends QueuedJob {
 	private string $groupWithFolderTag;
 	private int $rootStorageId;
 	/**
-	 * @var \CTApi\Models\Groups\Person\Person[]
+	 * @var \Devdot\ChurchTools\Api\Generated\Model\Person[]
 	 */
 	private array $ctUsers = [];
 
 	/**
-	 * @var \CTApi\Models\Groups\Group\Group[]
+	 * @var \Devdot\ChurchTools\Api\Generated\Model\Group[]
 	 */
 	private array $ctGroups = [];
 
 	/**
-	 * @var Tag[][]
+	 * @var array<int, \Devdot\ChurchTools\Api\Generated\Model\GroupTagsItem[]>
 	 */
 	private array $ctGroupTags = [];
 
@@ -61,7 +59,7 @@ class Update extends QueuedJob {
 		private ?RuleManager $ruleManager,
 		IRootFolder $rootFolder,
 		private readonly IDBConnection $connection,
-		private Client $client,
+		private Client $apiClient,
 	) {
 		parent::__construct($time);
 
@@ -83,9 +81,7 @@ class Update extends QueuedJob {
 	 * @param array $argument
 	 */
 	protected function run($argument): void {
-		$auth = $this->client->auth();
-
-		if (!$auth) {
+		if (!$this->apiClient->isAuthenticated()) {
 			throw new \Exception('CT Auth failed!');
 		}
 
@@ -97,20 +93,21 @@ class Update extends QueuedJob {
 	private function requestGroups(): void {
 		try {
 			$page = 0;
+			/** @var \Devdot\ChurchTools\Api\Generated\Model\Group[] */
 			$groups = [];
 			do {
 				$page++;
-				$request = $this->client->get('/api/groups?include=tags&page=' . $page, []);
-				$return = json_decode($request->getBody()->getContents(), true, 512, JSON_THROW_ON_ERROR);
-				$groups[] = $return['data'];
-			} while ($return && $return['meta']['pagination']['lastPage'] > $page);
-			$groups = array_merge(...$groups);
+				$return = $this->apiClient->getGroups([
+					'page' => $page,
+					'include' => ['tags'],
+				]);
+				$groups = array_merge($groups, $return->data);
+			} while ($return->meta->pagination->lastPage > $page);
 
-			// now loop through the groups and create objects
+			// now loop through the groups and sort
 			foreach ($groups as $group) {
-				$this->ctGroups[$group['id']] = Group::createModelsFromArray($group)[0];
-				/** @psalm-suppress InvalidPropertyAssignmentValue */
-				$this->ctGroupTags[$group['id']] = Tag::createModelsFromArray($group['tags']);
+				$this->ctGroups[$group->id] = $group;
+				$this->ctGroupTags[$group->id] = $group->tags;
 			}
 		} catch (\Throwable $e) {
 			throw $e;
@@ -134,7 +131,7 @@ class Update extends QueuedJob {
 		foreach ($this->ctGroups as $id => $group) {
 			// loop through tags
 			foreach ($this->ctGroupTags[$id] ?? [] as $tag) {
-				$tagName = $tag->getName();
+				$tagName = $tag->name;
 				if ($tagName === $this->groupWithFolderTag) {
 					$groupsWithFolder[] = $group;
 				}
@@ -146,7 +143,7 @@ class Update extends QueuedJob {
 
 	private function updateGroupWithFolder(Group $group): void {
 		// make sure the group is created
-		$groupName = $group->getName() ?? '';
+		$groupName = $group->name ?? '';
 		$ncGroupName = $this->groupPrefix . $groupName;
 		if (($ncGroup = $this->groupManager->get($ncGroupName)) === null) {
 			$ncGroup = $this->groupManager->createGroup($ncGroupName) ?? throw new Exception('Could not create group ' . $ncGroupName);
@@ -209,13 +206,18 @@ class Update extends QueuedJob {
 		// TODO: maybe keep a record of these groups in a DB?
 		$leaderName = $this->groupPrefix . $name . $this->leaderGroupSuffix;
 		return $this->groupManager->get($leaderName) ?? $this->groupManager->createGroup($leaderName) ?? throw new Exception('Could not create new group ' . $leaderName);
-
 	}
 
 	private function updatePersons(): void {
-		foreach (PersonRequest::all() as $person) {
-			$this->ctUsers[$person->getId()] = $person;
-		}
+		$page = 1;
+		do {
+			$response = $this->apiClient->getPersons(['page' => $page]);
+			foreach ($response->data as $person) {
+				$this->ctUsers[$person->id] = $person;
+			}
+			$page++;
+		} while ($page < $response->meta->pagination->lastPage);
+
 		$this->userManager->callForAllUsers(\Closure::fromCallable([$this, 'callbackUpdatePerson']), $this->userPrefix);
 	}
 

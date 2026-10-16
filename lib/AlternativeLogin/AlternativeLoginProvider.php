@@ -19,9 +19,9 @@ class AlternativeLoginProvider implements IAlternativeLoginProvider {
 	 * @psalm-suppress PossiblyUnusedMethod
 	 */
 	public function __construct(
-        private string $appName,
+		private string $appName,
 		private IRequest $request,
-        private ISession $session,
+		private ISession $session,
 		private IUrlGenerator $urlGenerator,
 		private IAppConfig $appConfig,
 		private IL10N $l10n,
@@ -29,9 +29,9 @@ class AlternativeLoginProvider implements IAlternativeLoginProvider {
 	}
 
 	public function getAlternativeLogins(): array {
-        return [
-            new ChurchToolsLogin($this->appName, $this->appConfig, $this->urlGenerator, $this->request, $this->session),
-            new DefaultLogin($this->appName, $this->appConfig, $this->l10n),
-        ];
+		return [
+			new ChurchToolsLogin($this->appName, $this->appConfig, $this->urlGenerator, $this->request, $this->session),
+			new DefaultLogin($this->appName, $this->appConfig, $this->l10n),
+		];
 	}
 }

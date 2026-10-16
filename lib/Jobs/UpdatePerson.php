@@ -2,10 +2,9 @@
 
 namespace OCA\ChurchToolsIntegration\Jobs;
 
-use CTApi\Models\Groups\GroupTypeRole\GroupTypeRole;
-use CTApi\Models\Groups\Person\Person;
-use CTApi\Models\Groups\Person\PersonRequest;
-use OCA\ChurchToolsIntegration\Client;
+use Devdot\ChurchTools\Api\Client;
+use Devdot\ChurchTools\Api\Generated\Model\Person;
+use Devdot\ChurchTools\Api\Generated\Model\Role;
 use OCP\BackgroundJob\IJobList;
 use OCP\BackgroundJob\QueuedJob;
 use OCP\IAppConfig;
@@ -17,6 +16,10 @@ use OCP\Server;
  * @psalm-api
  */
 class UpdatePerson extends QueuedJob {
+	/**
+	 * @var \Devdot\ChurchTools\Api\Generated\Model\Role[]
+	 */
+	private static array $groupRoles;
 	private string $userPrefix;
 	private string $groupPrefix;
 	private string $leaderGroupSuffix;
@@ -26,7 +29,7 @@ class UpdatePerson extends QueuedJob {
 		\OCP\AppFramework\Utility\ITimeFactory $time,
 		IAppConfig $config,
 		private IGroupManager $groupManager,
-		private Client $client,
+		private Client $apiClient,
 	) {
 		parent::__construct($time);
 
@@ -49,9 +52,7 @@ class UpdatePerson extends QueuedJob {
 	 * @param array{user: IUser, person: ?Person} $argument
 	 */
 	protected function run($argument): void {
-		$auth = $this->client->auth();
-
-		if (!$auth) {
+		if (!$this->apiClient->isAuthenticated()) {
 			throw new \Exception('CT Auth failed!');
 		}
 
@@ -61,20 +62,21 @@ class UpdatePerson extends QueuedJob {
 			$id = (int)substr($user->getUID(), strlen($this->userPrefix));
 
 			// try to find through search, so it doesn't clutter CT logs/audit trails
-			$ctUser = PersonRequest::where('ids', [$id])->get()[0] ?? PersonRequest::find($id);
+			try {
+				$ctUser = $this->apiClient->getPersonsId($id)->data;
 
-			if ($ctUser === null) {
+			} catch (\Throwable $t) {
 				return;
 			}
 		}
 
 		// add user to groups
-		$groups = $ctUser->requestGroups()?->get() ?? [];
+		$groups = $this->apiClient->getPersonsIdGroups($ctUser->id)->data;
 		$removeGroups = array_fill_keys($this->groupManager->getUserGroupIds($user), true);
 		foreach ($groups as $personGroup) {
-			$ctGroup = $personGroup->getGroup();
+			$ctGroup = $personGroup->group;
 
-			$name = $this->groupPrefix . $ctGroup->getName();
+			$name = $this->groupPrefix . $ctGroup->title;
 			$group = $this->groupManager->get($name);
 			if ($group) {
 				$group->addUser($user);
@@ -83,7 +85,7 @@ class UpdatePerson extends QueuedJob {
 
 			// take care of leader groups
 			$leaderName = $name . $this->leaderGroupSuffix;
-			if ($this->isGroupLeader($personGroup->getGroupTypeRoleId()) && $leaderGroup = $this->groupManager->get($leaderName)) {
+			if ($this->isGroupLeader($personGroup->groupTypeRoleId) && $leaderGroup = $this->groupManager->get($leaderName)) {
 				$leaderGroup->addUser($user);
 				$removeGroups[$leaderGroup->getGID()] = false;
 			}
@@ -102,8 +104,23 @@ class UpdatePerson extends QueuedJob {
 	}
 
 	private function isGroupLeader(int $groupRoleTypeId): bool {
-		$groupRoleTypes = $this->client->getGroupRoleTypes();
-		$type = $groupRoleTypes[$groupRoleTypeId] ?? null;
-		return $type instanceof GroupTypeRole && ($type->getIsLeader() or $type->getName() === 'Administrator');
+		$groupRoleTypes = self::getGroupRoles($this->apiClient);
+		$role = $groupRoleTypes[$groupRoleTypeId] ?? null;
+		return $role instanceof Role && ($role->type === $role->type::Leader || $role->name === 'Administrator');
+	}
+
+	/**
+	 * @return \Devdot\ChurchTools\Api\Generated\Model\Role[]
+	 */
+	private static function getGroupRoles(Client $client): array {
+		if (!isset(self::$groupRoles)) {
+			self::$groupRoles = [];
+
+			$roles = $client->getGroupRoles()->data;
+			foreach ($roles as $role) {
+				self::$groupRoles[$role->id] = $role;
+			}
+		}
+		return self::$groupRoles;
 	}
 }
