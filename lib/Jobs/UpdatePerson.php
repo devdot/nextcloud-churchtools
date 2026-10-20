@@ -63,7 +63,7 @@ class UpdatePerson extends QueuedJob {
 
 			// try to find through search, so it doesn't clutter CT logs/audit trails
 			try {
-				$ctUser = $this->apiClient->getPersonsId($id)->data;
+				$ctUser = $this->apiClient->getPersonsById($id)->data;
 
 			} catch (\Throwable $t) {
 				return;
@@ -71,7 +71,7 @@ class UpdatePerson extends QueuedJob {
 		}
 
 		// add user to groups
-		$groups = $this->apiClient->getPersonsIdGroups($ctUser->id)->data;
+		$groups = $this->apiClient->getPersonsByIdGroups($ctUser->id)->data;
 		$removeGroups = array_fill_keys($this->groupManager->getUserGroupIds($user), true);
 		foreach ($groups as $personGroup) {
 			$ctGroup = $personGroup->group;

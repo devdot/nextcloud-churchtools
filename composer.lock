@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ba89c1e8d4518dc0a45e92a2990dfbf0",
+    "content-hash": "c298f87b4ee089fdc3dd7072288027d4",
     "packages": [
         {
             "name": "bamarni/composer-bin-plugin",
@@ -69,12 +69,12 @@
             "source": {
                 "type": "git",
                 "url": "https://git.s.tkusch.de/devdot/churchtools-api.git",
-                "reference": "e0e477a969468ffde0702ea436d55b600fc915bd"
+                "reference": "20cb2ce76172f3f95f94fc18d51113c4ed14d024"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packeton.s.tkusch.de/zipball/devdot/churchtools-api/e0e477a969468ffde0702ea436d55b600fc915bd.zip",
-                "reference": "e0e477a969468ffde0702ea436d55b600fc915bd",
+                "url": "https://packeton.s.tkusch.de/zipball/devdot/churchtools-api/20cb2ce76172f3f95f94fc18d51113c4ed14d024.zip",
+                "reference": "20cb2ce76172f3f95f94fc18d51113c4ed14d024",
                 "mirrors": [
                     {
                         "url": "https://packeton.s.tkusch.de/zipball/%package%/%reference%.%type%",
@@ -90,6 +90,8 @@
                 "friendsofphp/php-cs-fixer": "^3.95",
                 "jane-php/open-api-3-1": "^8.0",
                 "nette/php-generator": "^4.2",
+                "nikic/php-parser": "^5.9",
+                "php-openapi/openapi": "^2.1",
                 "phpdocumentor/reflection-docblock": "^6.0",
                 "phpstan/phpstan": "^2.2",
                 "phpunit/phpunit": "^13.4",
@@ -114,7 +116,7 @@
                 }
             ],
             "description": "Client for the ChurchTools API.",
-            "time": "2026-10-16T16:38:27+00:00"
+            "time": "2026-10-20T10:44:22+00:00"
         },
         {
             "name": "devdot/churchtools-oauth2-client",
