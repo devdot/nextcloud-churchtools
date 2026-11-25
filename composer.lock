@@ -69,12 +69,12 @@
             "source": {
                 "type": "git",
                 "url": "https://git.s.tkusch.de/devdot/churchtools-api.git",
-                "reference": "20cb2ce76172f3f95f94fc18d51113c4ed14d024"
+                "reference": "6202284a3f686c00cb6dfea3ce9a4802d86a189c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://packeton.s.tkusch.de/zipball/devdot/churchtools-api/20cb2ce76172f3f95f94fc18d51113c4ed14d024.zip",
-                "reference": "20cb2ce76172f3f95f94fc18d51113c4ed14d024",
+                "url": "https://packeton.s.tkusch.de/zipball/devdot/churchtools-api/6202284a3f686c00cb6dfea3ce9a4802d86a189c.zip",
+                "reference": "6202284a3f686c00cb6dfea3ce9a4802d86a189c",
                 "mirrors": [
                     {
                         "url": "https://packeton.s.tkusch.de/zipball/%package%/%reference%.%type%",
@@ -116,7 +116,7 @@
                 }
             ],
             "description": "Client for the ChurchTools API.",
-            "time": "2026-10-20T10:44:22+00:00"
+            "time": "2026-11-25T14:08:50+00:00"
         },
         {
             "name": "devdot/churchtools-oauth2-client",
